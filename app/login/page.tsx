@@ -134,7 +134,7 @@ export default function LoginPage() {
         >
           folio.
         </motion.h1>
-        <p className="text-[#5a5048] font-mono text-[10px] tracking-[0.4em] uppercase opacity-80">
+        <p className="text-[#8b7e74] font-mono text-[10px] tracking-[0.6em] uppercase opacity-80">
           any meaningful connection
         </p>
       </header>
