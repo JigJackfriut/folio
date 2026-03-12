@@ -268,8 +268,7 @@ focus:border-[#c8922a55] placeholder:text-[#5a5048]"
 font-bold tracking-widest py-3 rounded-md disabled:opacity-40 
 hover:bg-[#d4a843] transition-colors mt-1"
         >
-          {loading ? '...' : mode === 'login' ? '→ log in' : '→ create 
-account'}
+          {loading ? '...' : mode === 'login' ? '→ log in' : '→ create account'}
         </button>
 
         {mode === 'login' && (
