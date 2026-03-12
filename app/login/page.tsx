@@ -11,7 +11,9 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState('')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'taken' | 'available'>('idle')
+  const [usernameStatus, setUsernameStatus] = useState<
+    'idle' | 'checking' | 'taken' | 'available'
+  >('idle')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -22,13 +24,13 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  // --- Password Strength Logic ---
   const getPasswordStrength = () => {
     if (password.length === 0) return 0
     if (password.length < 6) return 1
     const hasMixed = /[A-Z]/.test(password) && /[0-9]/.test(password)
     return hasMixed && password.length >= 8 ? 3 : 2
   }
+
   const strength = getPasswordStrength()
 
   const checkUsername = (value: string) => {
@@ -67,17 +69,25 @@ export default function LoginPage() {
     e?.preventDefault()
     setError('')
 
-    // Only strict validation on signup. For login, we let Supabase handle the error.
     if (mode === 'signup') {
-      if (usernameStatus !== 'available') return setError('Username is not available.')
-      if (password.length < 6) return setError('Password is too short.')
+      if (usernameStatus !== 'available') {
+        setError('Username is not available.')
+        return
+      }
+      if (password.length < 6) {
+        setError('Password is too short.')
+        return
+      }
     }
 
     setLoading(true)
 
     try {
       if (mode === 'signup') {
-        const { data, error: authErr } = await supabase.auth.signUp({ email, password })
+        const { data, error: authErr } = await supabase.auth.signUp({
+          email,
+          password,
+        })
         if (authErr) throw authErr
 
         if (data.user) {
@@ -88,6 +98,7 @@ export default function LoginPage() {
           })
           if (profErr) throw profErr
         }
+
         router.push('/onboarding')
       } else {
         let loginEmail = identifier.trim().toLowerCase()
@@ -103,7 +114,11 @@ export default function LoginPage() {
           loginEmail = profile.email
         }
 
-        const { error: logErr } = await supabase.auth.signInWithPassword({ email: loginEmail, password })
+        const { error: logErr } = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password,
+        })
+
         if (logErr) throw new Error('Invalid login credentials.')
         router.push('/feed')
       }
@@ -114,166 +129,219 @@ export default function LoginPage() {
     }
   }
 
-  // REFINED LOGIC: Login is enabled as long as inputs aren't empty.
-  const isFormInvalid = mode === 'signup'
-    ? (!email || !password || usernameStatus !== 'available' || password.length < 6)
-    : (!identifier || !password)
+  const isFormInvalid =
+    mode === 'signup'
+      ? !email || !password || usernameStatus !== 'available' || password.length < 6
+      : !identifier || !password
 
-  // SANS-SERIF for text, MONO for labels
-  const inputStyle = 'w-full bg-[#221e19] border border-[#2e2820] rounded-md px-4 py-3 font-sans text-[#e8dcc8] text-sm outline-none focus:border-[#c8922a] focus:ring-1 focus:ring-[#c8922a44] transition-all placeholder:text-[#a3978d]'
+  const inputStyle =
+    'w-full rounded-xl border border-[#4f3c73] bg-[#2a1f42]/90 px-4 py-3 font-sans text-sm text-[#f5efff] outline-none transition-all placeholder:text-[#a99abb] focus:border-[#b9a3ff] focus:ring-2 focus:ring-[#8f73e633]'
 
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center bg-[#1a1612] px-6 selection:bg-[#c8922a55] overflow-hidden">
+    <main className="relative min-h-screen overflow-hidden bg-[#1b1328] px-6 selection:bg-[#8f73e655]">
       <BackgroundGlow />
 
-      <header className="relative z-10 text-center mb-10">
-        <motion.h1 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="font-serif italic text-6xl text-[#e8dcc8] mb-3 tracking-tighter drop-shadow-[0_10px_10px_rgba(200,146,42,0.15)]"
-        >
-          folio.
-        </motion.h1>
-        <p className="text-[#8b7e74] font-mono text-[10px] tracking-[0.6em] uppercase opacity-80">
-          any meaningful connection
-        </p>
-      </header>
+      <div className="relative z-10 flex min-h-screen items-center justify-center">
+        <div className="w-full max-w-sm">
+          <header className="mb-8 text-center">
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-3 font-serif text-6xl italic tracking-tighter text-[#f5efff] drop-shadow-[0_10px_25px_rgba(143,115,230,0.22)]"
+            >
+              folio.
+            </motion.h1>
 
-      <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-sm flex flex-col gap-4">
-        
-        {/* Toggle with Animated Slide */}
-        <LayoutGroup>
-          <div className="flex bg-[#221e19] border border-[#2e2820] rounded-lg p-1 relative">
-            {(['login', 'signup'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => { setMode(t); setError('') }}
-                className={`flex-1 py-2 font-mono text-xs tracking-widest rounded-md transition-colors relative z-10 ${
-                  mode === t ? 'text-[#1a1410] font-bold' : 'text-[#5a5048] hover:text-[#8b7e74]'
-                }`}
-              >
-                {t === 'login' ? 'log in' : 'sign up'}
-                {mode === t && (
-                  <motion.div 
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-[#c8922a] rounded-md -z-10"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-        </LayoutGroup>
+            <p className="font-mono text-[10px] uppercase tracking-[0.45em] text-[#c8bbdf]">
+              for meaningful connection
+            </p>
+          </header>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={mode}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col gap-4"
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-[24px] border border-[#4b376f]/80 bg-[#241936]/75 p-6 shadow-[0_20px_80px_rgba(5,0,20,0.45)] backdrop-blur-xl"
           >
-            {mode === 'signup' && (
-              <>
-                <div className="space-y-1">
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5a5048] font-mono text-sm">@</span>
+            <div className="flex flex-col gap-4">
+              <LayoutGroup>
+                <div className="relative flex rounded-xl border border-[#4b376f] bg-[#2c2044]/90 p-1">
+                  {(['login', 'signup'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => {
+                        setMode(t)
+                        setError('')
+                      }}
+                      className={`relative z-10 flex-1 rounded-lg py-2.5 font-mono text-xs uppercase tracking-[0.18em] transition-colors ${
+                        mode === t
+                          ? 'font-bold text-white'
+                          : 'text-[#ab9cc8] hover:text-[#e7deff]'
+                      }`}
+                    >
+                      {t === 'login' ? 'log in' : 'sign up'}
+
+                      {mode === t && (
+                        <motion.div
+                          layoutId="activeTab"
+                          className="absolute inset-0 -z-10 rounded-lg bg-[#6d4bc3]"
+                          transition={{ type: 'spring', bounce: 0.2, duration: 0.55 }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </LayoutGroup>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={mode}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col gap-4"
+                >
+                  {mode === 'signup' && (
+                    <>
+                      <div className="space-y-1.5">
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-sm text-[#8e7eaf]">
+                            @
+                          </span>
+
+                          <input
+                            type="text"
+                            autoComplete="username"
+                            placeholder="username"
+                            value={username}
+                            onChange={(e) => checkUsername(e.target.value)}
+                            className={`${inputStyle} pl-8`}
+                          />
+
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            {usernameStatus === 'checking' && (
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#b9a3ff] border-t-transparent" />
+                            )}
+                            {usernameStatus === 'available' && (
+                              <span className="text-xs text-violet-300">✓</span>
+                            )}
+                            {usernameStatus === 'taken' && (
+                              <span className="text-xs text-rose-400">×</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <p
+                          className={`px-1 font-mono text-[10px] ${
+                            usernameStatus === 'taken'
+                              ? 'text-rose-400'
+                              : 'text-[#b8abcf]'
+                          }`}
+                        >
+                          {usernameStatus === 'taken'
+                            ? 'Already taken'
+                            : 'At least 3 characters'}
+                        </p>
+                      </div>
+
+                      <input
+                        type="email"
+                        autoComplete="email"
+                        placeholder="email address"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={inputStyle}
+                      />
+                    </>
+                  )}
+
+                  {mode === 'login' && (
                     <input
                       type="text"
                       autoComplete="username"
-                      placeholder="username"
-                      value={username}
-                      onChange={(e) => checkUsername(e.target.value)}
-                      className={`${inputStyle} pl-8`}
+                      placeholder="email or username"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      className={inputStyle}
                     />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                      {usernameStatus === 'checking' && <div className="w-3 h-3 border-2 border-[#c8922a] border-t-transparent rounded-full animate-spin" />}
-                      {usernameStatus === 'available' && <span className="text-green-500 text-xs">✓</span>}
-                      {usernameStatus === 'taken' && <span className="text-red-500 text-xs">×</span>}
-                    </div>
-                  </div>
-                  <p className={`text-[10px] font-mono px-1 ${usernameStatus === 'taken' ? 'text-red-400' : 'text-[#8b7e74]'}`}>
-                    {usernameStatus === 'taken' ? 'Already taken' : 'At least 3 characters'}
-                  </p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    placeholder="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={inputStyle}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.15em] text-[#9f8fbe] hover:text-[#d9ceff]"
+                  >
+                    {showPassword ? 'hide' : 'show'}
+                  </button>
                 </div>
 
-                <input
-                  type="email"
-                  autoComplete="email"
-                  placeholder="email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputStyle}
-                />
-              </>
-            )}
+                {mode === 'signup' && (
+                  <div className="flex h-1.5 gap-1 px-1">
+                    {[1, 2, 3].map((step) => (
+                      <div
+                        key={step}
+                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${
+                          strength >= step
+                            ? strength === 1
+                              ? 'bg-rose-500/70'
+                              : strength === 2
+                              ? 'bg-amber-400/70'
+                              : 'bg-violet-400/80'
+                            : 'bg-[#3a2b58]'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {mode === 'login' && (
-              <input
-                type="text"
-                autoComplete="username"
-                placeholder="email or username"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className={inputStyle}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+              <div className="flex h-4 items-center justify-center">
+                {error && (
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-rose-400">
+                    {error}
+                  </p>
+                )}
+              </div>
 
-        <div className="space-y-2">
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              placeholder="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputStyle}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[10px] text-[#5a5048] uppercase tracking-tighter hover:text-[#c8922a]"
-            >
-              {showPassword ? 'hide' : 'show'}
-            </button>
-          </div>
-          
-          {mode === 'signup' && (
-            <div className="flex gap-1 px-1 h-1">
-              {[1, 2, 3].map((step) => (
-                <div key={step} className={`h-full flex-1 rounded-full transition-colors duration-500 ${strength >= step ? (strength === 1 ? 'bg-red-900' : strength === 2 ? 'bg-yellow-700' : 'bg-green-700') : 'bg-[#2e2820]'}`} />
-              ))}
+              <button
+                type="submit"
+                disabled={loading || isFormInvalid}
+                className="w-full rounded-xl bg-[#6d4bc3] py-4 font-mono text-sm font-bold uppercase tracking-[0.22em] text-white shadow-lg shadow-[#6d4bc340] transition-all hover:shadow-[#6d4bc360] active:scale-[0.98] disabled:grayscale disabled:opacity-30"
+              >
+                {loading
+                  ? 'Processing...'
+                  : mode === 'login'
+                  ? '→ log in'
+                  : '→ create account'}
+              </button>
+
+              <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#aa9bc7]">
+                {mode === 'login' ? "don't have an account?" : 'already a member?'}{' '}
+                <button
+                  type="button"
+                  onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                  className="text-[#d7cbff] hover:underline"
+                >
+                  {mode === 'login' ? 'sign up' : 'log in'}
+                </button>
+              </p>
             </div>
-          )}
+          </form>
         </div>
-
-        <div className="h-4 flex items-center justify-center">
-          {error && <p className="text-red-400 font-mono text-[10px] uppercase tracking-tighter animate-pulse">{error}</p>}
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading || isFormInvalid}
-          className="w-full bg-[#c8922a] text-[#1a1410] font-mono text-sm font-bold tracking-[0.2em] py-4 rounded-md disabled:opacity-30 disabled:grayscale transition-all active:scale-[0.98] shadow-lg shadow-[#c8922a10] hover:shadow-[#c8922a25] uppercase"
-        >
-          {loading ? 'Processing...' : mode === 'login' ? '→ log in' : '→ create account'}
-        </button>
-
-        <p className="text-center text-[#5a5048] font-mono text-[10px] mt-4 uppercase tracking-[0.2em]">
-          {mode === 'login' ? "don't have an account?" : "already a member?"}{' '}
-          <button 
-            type="button" 
-            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} 
-            className="text-[#c8922a] hover:underline"
-          >
-            {mode === 'login' ? 'sign up' : 'log in'}
-          </button>
-        </p>
-      </form>
+      </div>
     </main>
   )
 }
