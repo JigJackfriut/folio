@@ -3,13 +3,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [identifier, setIdentifier] = useState('')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'taken' | 'available'>('idle')
+  const [usernameStatus, setUsernameStatus] =
+    useState<'idle' | 'checking' | 'taken' | 'available'>('idle')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -20,16 +22,15 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  // --- Password Strength Logic ---
   const getPasswordStrength = () => {
     if (password.length === 0) return 0
     if (password.length < 6) return 1
     const hasMixed = /[A-Z]/.test(password) && /[0-9]/.test(password)
     return hasMixed && password.length >= 8 ? 3 : 2
   }
+
   const strength = getPasswordStrength()
 
-  // --- Debounced Username Check with Race Condition Protection ---
   const checkUsername = (value: string) => {
     const cleaned = value.toLowerCase().replace(/[^a-z0-9._]/g, '')
     setUsername(cleaned)
@@ -57,12 +58,22 @@ export default function LoginPage() {
 
         if (fetchError) throw fetchError
         setUsernameStatus(data ? 'taken' : 'available')
-      } catch (err) {
+      } catch (err: any) {
         if (err.name !== 'AbortError') setUsernameStatus('idle')
       }
     }, 400)
   }
 
+  return (
+    <main className="relative min-h-screen flex items-center justify-center">
+      <BackgroundGlow />
+
+      <div className="relative z-10">
+        {/* your actual login form goes here */}
+      </div>
+    </main>
+  )
+}
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setError('')
