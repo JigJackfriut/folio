@@ -135,7 +135,7 @@ export default function LoginPage() {
       : !identifier || !password
 
   const inputStyle =
-    'w-full rounded-xl border border-[#4f3c73] bg-[#2a1f42]/90 px-4 py-3 font-sans text-sm text-[#f5efff] outline-none transition-all placeholder:text-[#a99abb] focus:border-[#b9a3ff] focus:ring-2 focus:ring-[#8f73e633]'
+    'w-full rounded-xl border border-[#4f3c73] bg-[#2a1f42]/90 px-4 py-3 font-sans text-sm text-[#f5efff] outline-none transition-all placeholder:text-[#a99abb] focus:border-[#c3b3ff] focus:ring-2 focus:ring-[#8f73e633]'
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#1b1328] px-6 selection:bg-[#8f73e655]">
@@ -152,14 +152,14 @@ export default function LoginPage() {
               folio.
             </motion.h1>
 
-            <p className="font-mono text-[10px] uppercase tracking-[0.45em] text-[#c8bbdf]">
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.42em] text-[#ddd2f7] opacity-95">
               for meaningful connection
             </p>
           </header>
 
           <form
             onSubmit={handleSubmit}
-            className="rounded-[24px] border border-[#4b376f]/80 bg-[#241936]/75 p-6 shadow-[0_20px_80px_rgba(5,0,20,0.45)] backdrop-blur-xl"
+            className="rounded-[24px] border border-[#4b376f]/80 bg-[#241936]/75 p-6 shadow-[0_20px_90px_rgba(5,0,20,0.45),0_0_45px_rgba(109,75,195,0.18)] backdrop-blur-xl"
           >
             <div className="flex flex-col gap-4">
               <LayoutGroup>
@@ -175,7 +175,7 @@ export default function LoginPage() {
                       className={`relative z-10 flex-1 rounded-lg py-2.5 font-mono text-xs uppercase tracking-[0.18em] transition-colors ${
                         mode === t
                           ? 'font-bold text-white'
-                          : 'text-[#ab9cc8] hover:text-[#e7deff]'
+                          : 'text-[#c1b4df] hover:text-[#f0eaff]'
                       }`}
                     >
                       {t === 'login' ? 'log in' : 'sign up'}
@@ -205,7 +205,7 @@ export default function LoginPage() {
                     <>
                       <div className="space-y-1.5">
                         <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-sm text-[#8e7eaf]">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-sm text-[#a696c8]">
                             @
                           </span>
 
@@ -220,7 +220,7 @@ export default function LoginPage() {
 
                           <div className="absolute right-4 top-1/2 -translate-y-1/2">
                             {usernameStatus === 'checking' && (
-                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#b9a3ff] border-t-transparent" />
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#c3b3ff] border-t-transparent" />
                             )}
                             {usernameStatus === 'available' && (
                               <span className="text-xs text-violet-300">✓</span>
@@ -235,7 +235,7 @@ export default function LoginPage() {
                           className={`px-1 font-mono text-[10px] ${
                             usernameStatus === 'taken'
                               ? 'text-rose-400'
-                              : 'text-[#b8abcf]'
+                              : 'text-[#c1b4dc]'
                           }`}
                         >
                           {usernameStatus === 'taken'
@@ -282,7 +282,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.15em] text-[#9f8fbe] hover:text-[#d9ceff]"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.15em] text-[#b3a5d0] hover:text-[#f0eaff]"
                   >
                     {showPassword ? 'hide' : 'show'}
                   </button>
@@ -319,7 +319,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading || isFormInvalid}
-                className="w-full rounded-xl bg-[#6d4bc3] py-4 font-mono text-sm font-bold uppercase tracking-[0.22em] text-white shadow-lg shadow-[#6d4bc340] transition-all hover:shadow-[#6d4bc360] active:scale-[0.98] disabled:grayscale disabled:opacity-30"
+                className="w-full rounded-xl bg-[#6d4bc3] py-4 font-mono text-sm font-bold uppercase tracking-[0.22em] text-white shadow-lg shadow-[#6d4bc340] transition-all hover:shadow-[#6d4bc360] active:scale-[0.98] disabled:bg-[#3b2f4f] disabled:text-[#9587b0] disabled:opacity-60"
               >
                 {loading
                   ? 'Processing...'
@@ -328,12 +328,12 @@ export default function LoginPage() {
                   : '→ create account'}
               </button>
 
-              <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#aa9bc7]">
+              <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#b8abcf]">
                 {mode === 'login' ? "don't have an account?" : 'already a member?'}{' '}
                 <button
                   type="button"
                   onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-                  className="text-[#d7cbff] hover:underline"
+                  className="text-[#e4dbff] hover:underline"
                 >
                   {mode === 'login' ? 'sign up' : 'log in'}
                 </button>
