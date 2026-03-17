@@ -42,7 +42,7 @@ export function ScreenWrapper({ children }: { children: React.ReactNode }) {
 
 export function ScreenLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#7a6b9a] mb-6">
+    <p className="font-mono text-[11px] font-bold uppercase tracking-[0.45em] text-[#ddd2f7] opacity-100 mb-8">
       {children}
     </p>
   )
