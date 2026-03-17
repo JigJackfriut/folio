@@ -251,35 +251,34 @@ export function NavBar({
   nextDisabled?: boolean
 }) {
   return (
-    <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-6 py-4 border-t border-[#2a1f42] bg-[#1b1328]">
+    <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between px-6 py-6 border-t border-[#2e2820] bg-[#1b1328]/80 backdrop-blur-md z-50">
+  <button
+    type="button"
+    onClick={onBack}
+    className={`font-mono text-[12px] uppercase tracking-widest text-[#7a6b9a] hover:text-[#ddd2f7] ${!backVisible ? 'invisible' : ''}`}
+  >
+    ← back
+  </button>
+  
+  <div className="flex items-center gap-6">
+    {skipVisible && (
       <button
         type="button"
-        onClick={onBack}
-        className={`font-mono text-[12px] text-[#7a6b9a] hover:text-[#a99abb] transition-colors ${
-          !backVisible ? 'invisible' : ''
-        }`}
+        onClick={onSkip}
+        className="font-mono text-[12px] uppercase tracking-widest text-[#7a6b9a]"
       >
-        ← back
+        skip
       </button>
-      <div className="flex items-center gap-3">
-        {skipVisible && onSkip && (
-          <button
-            type="button"
-            onClick={onSkip}
-            className="font-mono text-[12px] text-[#7a6b9a] hover:text-[#a99abb] transition-colors"
-          >
-            skip
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={nextDisabled}
-          className="px-6 py-2.5 rounded-full bg-[#6d4bc3] font-mono text-[13px] font-bold text-white tracking-[0.08em] transition-all hover:bg-[#7d5bd3] active:scale-[0.97] disabled:bg-[#3b2f4f] disabled:text-[#7a6b9a]"
-        >
-          {nextLabel}
-        </button>
-      </div>
-    </div>
+    )}
+    <button
+      type="button"
+      onClick={onNext}
+      disabled={nextDisabled}
+      className="px-8 py-3 rounded-full bg-[#c8922a] text-[#1a1410] font-mono text-[12px] font-bold uppercase tracking-widest active:scale-95 transition-all disabled:opacity-30"
+    >
+      {nextLabel} →
+    </button>
+  </div>
+</div>
   )
 }
