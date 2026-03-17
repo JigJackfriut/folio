@@ -6,16 +6,16 @@ import { motion } from 'framer-motion'
 
 export function ProgressDots({ current, total }: { current: number; total: number }) {
   return (
-    <div className="flex gap-1.5 mb-10">
+    <div className="flex gap-1.5 mb-10 w-full px-2">
       {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}
-          className={`h-[2px] flex-1 rounded-full transition-all duration-300 ${
+          className={`h-[3px] flex-1 rounded-full transition-all duration-500 ${
             i < current - 1
-              ? 'bg-[#c3b3ff]'
+              ? 'bg-[#ddd2f7]'        // Completed: Bright Lavender
               : i === current - 1
-              ? 'bg-[#8b6fd4]'
-              : 'bg-[#3a2b58]'
+              ? 'bg-[#c8922a]'        // Current: Gold
+              : 'bg-[#2e2820]'        // Future: Dark Wood/Grey
           }`}
         />
       ))}
