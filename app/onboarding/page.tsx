@@ -434,100 +434,131 @@ export default function OnboardingPage() {
   const goBack = () => setStep((s) => Math.max(1, s - 1))
   const goSkip = () => setStep((s) => s + 1)
 
-  const publish = async () => {
-    setSaving(true)
-    setError('')
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+const publish = async () => {
+  setSaving(true)
+  setError('')
 
-      const locationDisplay = state.hide_exact_location
-        ? state.location_raw.split(',')[0]?.trim() ?? state.location_raw.trim()
-        : state.location_raw.trim()
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
 
-      // 1. Upsert profile (safe — uses PK)
-      const { error: profileErr } = await supabase.from('profiles').upsert({
-        id: user.id,
-        display_name: state.display_name.trim(),
-        age: parseInt(state.age),
-        gender_identity: state.gender_identity,
-        location_raw: state.location_raw.trim(),
-        location_display: locationDisplay,
-        open_to_distance: state.open_to_distance,
-        hide_exact_location: state.hide_exact_location,
-        gender_preference: state.gender_preference,
-        age_min: state.age_min,
-        age_max: state.age_max,
-        intent_type: state.intent_type,
-        filter_kids: state.filter_kids,
-        filter_structure: state.filter_structure,
-        filter_smoking: state.filter_smoking,
-        filter_alcohol: state.filter_alcohol,
-        filter_religion: state.filter_religion,
-        onboarding_complete: true,
-      })
-      if (profileErr) throw profileErr
+    const locationDisplay = state.hide_exact_location
+      ? state.location_raw.split(',')[0]?.trim() ?? state.location_raw.trim()
+      : state.location_raw.trim()
 
-      // 2. One post per user — upsert on author_id rather than always inserting
-      // This prevents duplicate posts if the user redoes onboarding
-      const { data: post, error: postErr } = await supabase
-        .from('posts')
-        .upsert(
-          {
-            author_id: user.id,
-            headline: state.post_headline.trim(),
-            post_body: state.post_body.trim(),
-            seeking: state.intent_type,
-          },
-          { onConflict: 'author_id' }
-        )
-        .select('id')
-        .single()
-      if (postErr) throw postErr
+    // 1. Upsert profile
+    const { error: profileErr } = await supabase.from('profiles').upsert({
+      id: user.id,
+      display_name: state.display_name.trim(),
+      age: parseInt(state.age, 10),
+      gender_identity: state.gender_identity,
+      location_raw: state.location_raw.trim(),
+      location_display: locationDisplay,
+      open_to_distance: state.open_to_distance,
+      hide_exact_location: state.hide_exact_location,
+      gender_preference: state.gender_preference,
+      age_min: state.age_min,
+      age_max: state.age_max,
+      intent_type: state.intent_type,
+      filter_kids: state.filter_kids,
+      filter_structure: state.filter_structure,
+      filter_smoking: state.filter_smoking,
+      filter_alcohol: state.filter_alcohol,
+      filter_religion: state.filter_religion,
+      onboarding_complete: true,
+    })
 
-      // 3. profile_tags — upsert (safe on re-run)
-      if (state.tags.length > 0) {
-        const tagRows = state.tags.map((t) => ({
-          profile_id: user.id,
-          tag_name: t.name,
-          tier: t.tier,
-        }))
-        const { error: tagsErr } = await supabase
-          .from('profile_tags')
-          .upsert(tagRows, { onConflict: 'profile_id,tag_name' })
-        if (tagsErr) throw tagsErr
+    if (profileErr) throw profileErr
 
-        // 4. Link public tags to post via post_tags
-        if (post) {
-          const publicTags = state.tags.filter((t) => t.tier === 'public')
-          for (const tag of publicTags) {
-            // Upsert tag record
-            await supabase
-              .from('tags')
-              .upsert({ name: tag.name }, { onConflict: 'name' })
+    // 2. Upsert one post per user
+    const { data: post, error: postErr } = await supabase
+      .from('posts')
+      .upsert(
+        {
+          author_id: user.id,
+          headline: state.post_headline.trim(),
+          post_body: state.post_body.trim(),
+          seeking: state.intent_type,
+        },
+        { onConflict: 'author_id' }
+      )
+      .select('id')
+      .single()
 
-            const { data: tagRow } = await supabase
-              .from('tags')
-              .select('id')
-              .eq('name', tag.name)
-              .maybeSingle()
+    if (postErr) throw postErr
+    if (!post) throw new Error('Post could not be created')
 
-            if (tagRow) {
-              await supabase
-                .from('post_tags')
-                .upsert({ post_id: post.id, tag_id: tagRow.id }, { onConflict: 'post_id,tag_id' })
-            }
-          }
-        }
-      }
+    // 3. Replace profile_tags completely
+    const { error: deleteProfileTagsErr } = await supabase
+      .from('profile_tags')
+      .delete()
+      .eq('profile_id', user.id)
 
-      router.push('/feed')
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Something went wrong'
-      setError(message)
-      setSaving(false)
+    if (deleteProfileTagsErr) throw deleteProfileTagsErr
+
+    if (state.tags.length > 0) {
+      const profileTagRows = state.tags.map((t) => ({
+        profile_id: user.id,
+        tag_name: t.name,
+        tier: t.tier,
+      }))
+
+      const { error: insertProfileTagsErr } = await supabase
+        .from('profile_tags')
+        .insert(profileTagRows)
+
+      if (insertProfileTagsErr) throw insertProfileTagsErr
     }
+
+    // 4. Replace post_tags completely
+    const { error: deletePostTagsErr } = await supabase
+      .from('post_tags')
+      .delete()
+      .eq('post_id', post.id)
+
+    if (deletePostTagsErr) throw deletePostTagsErr
+
+    const publicTags = state.tags.filter((t) => t.tier === 'public')
+
+    if (publicTags.length > 0) {
+      // make sure tags exist
+      const { error: upsertTagsErr } = await supabase
+        .from('tags')
+        .upsert(
+          publicTags.map((t) => ({ name: t.name })),
+          { onConflict: 'name' }
+        )
+
+      if (upsertTagsErr) throw upsertTagsErr
+
+      const { data: tagRows, error: tagRowsErr } = await supabase
+        .from('tags')
+        .select('id, name')
+        .in('name', publicTags.map((t) => t.name))
+
+      if (tagRowsErr) throw tagRowsErr
+
+      const postTagRows = tagRows.map((tag) => ({
+        post_id: post.id,
+        tag_id: tag.id,
+      }))
+
+      if (postTagRows.length > 0) {
+        const { error: insertPostTagsErr } = await supabase
+          .from('post_tags')
+          .insert(postTagRows)
+
+        if (insertPostTagsErr) throw insertPostTagsErr
+      }
+    }
+
+    router.push('/feed')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Something went wrong'
+    setError(message)
+    setSaving(false)
   }
+}
 
   const Screen = SCREENS[step - 1]
 
