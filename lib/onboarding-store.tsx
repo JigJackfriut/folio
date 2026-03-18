@@ -3,6 +3,12 @@
 import { createContext, useContext, useReducer, ReactNode } from 'react'
 import type { TagEntry } from '@/lib/tags'
 
+export interface CollegeResult {
+  name: string
+  country: string
+  web_pages: string[]
+}
+
 export interface OnboardingState {
   // S1
   intent_type: string
@@ -10,10 +16,15 @@ export interface OnboardingState {
   display_name: string
   age: string
   gender_identity: string[]
-  // S3
-  location_raw: string
-  open_to_distance: boolean
-  hide_exact_location: boolean
+  // S3 — flexible matching base
+  match_base: 'location' | 'college'   // which anchor to use for proximity matching
+  location_raw: string                  // city/neighbourhood text (if match_base = 'location')
+  college_name: string                  // selected college name (if match_base = 'college')
+  college_country: string               // college country
+  college_url: string                   // college web_pages[0] for deduplication
+  match_radius_miles: number            // proximity radius (5 | 10 | 25 | 50 | 100)
+  hide_exact_location: boolean          // show neighbourhood only
+  open_to_distance: boolean             // also show people outside radius
   // S4
   gender_preference: string[]
   age_min: number
@@ -36,9 +47,14 @@ const initial: OnboardingState = {
   display_name: '',
   age: '',
   gender_identity: [],
+  match_base: 'location',
   location_raw: '',
-  open_to_distance: false,
+  college_name: '',
+  college_country: '',
+  college_url: '',
+  match_radius_miles: 25,
   hide_exact_location: true,
+  open_to_distance: false,
   gender_preference: [],
   age_min: 22,
   age_max: 36,
