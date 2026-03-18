@@ -23,18 +23,34 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
+
   const isPublicRoute =
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
-    pathname.startsWith('/auth')
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/dev')
 
+  const isOnboardingRoute = pathname.startsWith('/onboarding')
+
+  // Not logged in → send to login
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Logged in → check onboarding_complete
+  if (user && !isPublicRoute && !isOnboardingRoute) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_complete')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.onboarding_complete) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
   }
 
   return supabaseResponse
