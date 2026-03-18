@@ -1,107 +1,76 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import React from 'react'
 
-// ── Progress dots ────────────────────────────────────────────────────────────
+export const STEP_LABELS = [
+  'Intent',
+  'The Vitals',
+  'Geography',
+  'Preferences',
+  'The Soul',
+  'Curate Tags',
+  'Write Folio',
+  'Review',
+]
 
-export function ProgressDots({ current, total }: { current: number; total: number }) {
+export type ScreenProps = { onNext?: () => void }
+
+// ── ScreenLabel ──────────────────────────────────────────────────────────────
+
+export function ScreenLabel({ step }: { step: number }) {
   return (
-    <div className="flex gap-1.5 mb-10 w-full px-2">
-      {Array.from({ length: total }).map((_, i) => (
+    <div className="flex flex-col mb-9">
+      <div className="flex items-center gap-3">
+        <span
+          className="font-serif italic text-lg"
+          style={{ color: '#c8922a', fontFamily: 'EB Garamond, Georgia, serif' }}
+        >
+          Step {step}
+        </span>
         <div
-          key={i}
-          className={`h-[3px] flex-1 rounded-full transition-all duration-500 ${
-            i < current - 1
-              ? 'bg-[#ddd2f7]'        // Completed: Bright Lavender
-              : i === current - 1
-              ? 'bg-[#c8922a]'        // Current: Gold
-              : 'bg-[#2e2820]'        // Future: Dark Wood/Grey
-          }`}
+          className="h-[1px] flex-1 opacity-25"
+          style={{ background: 'linear-gradient(to right, #c8922a, transparent)' }}
         />
-      ))}
+      </div>
+      <span
+        className="font-mono text-[10px] uppercase mt-1"
+        style={{ color: '#7a6b9a', letterSpacing: '0.3em' }}
+      >
+        {STEP_LABELS[step - 1]}
+      </span>
     </div>
   )
 }
 
-// ── Screen wrapper with fade/slide animation ─────────────────────────────────
-
-export function ScreenWrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: 'easeOut' }}
-      className="flex flex-col flex-1"
-    >
-      {children}
-    </motion.div>
-  )
-}
-
-// ── Screen label (monospace top label) ──────────────────────────────────────
-
-export function ScreenLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="font-mono text-[11px] font-bold uppercase tracking-[0.45em] text-[#ddd2f7] opacity-100 mb-8">
-      {children}
-    </p>
-  )
-}
-
-// ── Main heading ─────────────────────────────────────────────────────────────
+// ── Heading ──────────────────────────────────────────────────────────────────
 
 export function Heading({ children }: { children: React.ReactNode }) {
   return (
-    <h1 className="font-serif text-[28px] leading-[1.25] text-[#f5efff] mb-1.5">
+    <h1
+      className="leading-[1.2] mb-1.5"
+      style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '30px', color: '#f5efff' }}
+    >
       {children}
     </h1>
   )
 }
 
-// ── Subheading / hint ────────────────────────────────────────────────────────
+// ── Sub ───────────────────────────────────────────────────────────────────────
 
 export function Sub({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-mono text-[11px] text-[#7a6b9a] tracking-[0.02em] mb-7 leading-relaxed">
+    <p
+      className="font-mono leading-relaxed mb-7"
+      style={{ fontSize: '11px', color: '#7a6b9a', letterSpacing: '0.02em' }}
+    >
       {children}
     </p>
   )
 }
 
-// ── Option card (single-select) ──────────────────────────────────────────────
+// ── EditorialInput ────────────────────────────────────────────────────────────
 
-export function OptionCard({
-  title,
-  description,
-  selected,
-  onClick,
-}: {
-  title: string
-  description: string
-  selected: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full text-left rounded-2xl border px-5 py-4 mb-2 transition-all duration-150 ${
-        selected
-          ? 'border-[#9b85e8] bg-[#2e1f4a]/80'
-          : 'border-[#3a2b58] bg-[#1e1530]/60 hover:border-[#5a4578]'
-      }`}
-    >
-      <p className={`text-[14px] font-medium mb-0.5 transition-colors ${selected ? 'text-[#f0eaff]' : 'text-[#a99abb]'}`}>
-        {title}
-      </p>
-      <p className="text-[12px] text-[#7a6b9a] leading-snug">{description}</p>
-    </button>
-  )
-}
-
-// ── Text input ───────────────────────────────────────────────────────────────
-
-export function Field({
+export function EditorialInput({
   label,
   hint,
   ...props
@@ -110,47 +79,120 @@ export function Field({
   hint?: string
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className="mb-5">
+    <div className="mb-7 group">
       {label && (
-        <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-[#7a6b9a] mb-1.5">
+        <p
+          className="font-serif italic mb-1 transition-colors duration-200"
+          style={{ fontSize: '15px', color: '#7a6b9a', fontFamily: 'EB Garamond, Georgia, serif' }}
+        >
           {label}
         </p>
       )}
       <input
         {...props}
-        className="w-full bg-transparent border-b border-[#3a2b58] pb-2.5 text-[16px] text-[#f5efff] outline-none placeholder:text-[#4a3b68] focus:border-[#9b85e8] transition-colors"
+        className="w-full bg-transparent outline-none placeholder:opacity-20 transition-colors"
+        style={{
+          borderBottom: '1px solid #3a2b58',
+          paddingBottom: '10px',
+          fontSize: '20px',
+          fontFamily: 'EB Garamond, Georgia, serif',
+          color: '#f5efff',
+        }}
+        onFocus={e => {
+          e.currentTarget.style.borderBottomColor = '#9b85e8'
+          e.currentTarget.previousElementSibling?.setAttribute('style', 'font-size:15px;color:#c8922a;font-family:EB Garamond,Georgia,serif;font-style:italic;margin-bottom:4px;transition:color 0.2s')
+        }}
+        onBlur={e => {
+          e.currentTarget.style.borderBottomColor = '#3a2b58'
+          e.currentTarget.previousElementSibling?.setAttribute('style', 'font-size:15px;color:#7a6b9a;font-family:EB Garamond,Georgia,serif;font-style:italic;margin-bottom:4px;transition:color 0.2s')
+        }}
       />
       {hint && (
-        <p className="font-mono text-[10px] text-[#4a3b68] mt-1.5">{hint}</p>
+        <p className="font-mono text-[9px] uppercase tracking-wider mt-1.5" style={{ color: '#4a3b68' }}>
+          {hint}
+        </p>
       )}
     </div>
   )
 }
 
-// ── Chip (multi-select) ───────────────────────────────────────────────────────
+// ── OptionCard ────────────────────────────────────────────────────────────────
 
-export function Chip({
-  label,
+export function OptionCard({
+  title,
+  description,
   selected,
   onClick,
-  size = 'md',
+  icon,
 }: {
-  label: string
+  title: string
+  description: string
   selected: boolean
   onClick: () => void
-  size?: 'sm' | 'md'
+  icon?: string
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border transition-all duration-150 ${
-        size === 'sm' ? 'px-3 py-1.5 text-[12px]' : 'px-4 py-2 text-[13px]'
-      } ${
-        selected
-          ? 'border-[#9b85e8] bg-[#2e1f4a] text-[#f0eaff] font-medium'
-          : 'border-[#3a2b58] bg-transparent text-[#7a6b9a] hover:border-[#5a4578] hover:text-[#a99abb]'
-      }`}
+      className="w-full text-left rounded-2xl mb-2 transition-all duration-150 flex items-center gap-4"
+      style={{
+        padding: '13px 16px',
+        border: `1px solid ${selected ? '#9b85e8' : '#3a2b58'}`,
+        background: selected ? 'rgba(46,31,74,0.8)' : 'rgba(30,21,48,0.4)',
+      }}
+    >
+      {icon && (
+        <span
+          className="flex-shrink-0 flex items-center justify-center rounded-full font-mono"
+          style={{
+            width: '32px',
+            height: '32px',
+            background: selected ? 'rgba(155,133,232,0.2)' : 'rgba(58,43,88,0.4)',
+            color: selected ? '#c3b3ff' : '#5a4b78',
+            fontSize: '13px',
+          }}
+        >
+          {icon}
+        </span>
+      )}
+      <div className="flex-1">
+        <p className="text-[14px] font-medium mb-0.5 transition-colors" style={{ color: selected ? '#f0eaff' : '#a99abb' }}>
+          {title}
+        </p>
+        <p className="text-[11px]" style={{ color: '#7a6b9a' }}>{description}</p>
+      </div>
+      <div
+        className="flex-shrink-0 rounded-full transition-all flex items-center justify-center"
+        style={{
+          width: '16px',
+          height: '16px',
+          border: `1.5px solid ${selected ? '#9b85e8' : '#3a2b58'}`,
+          background: selected ? '#9b85e8' : 'transparent',
+        }}
+      >
+        {selected && <span style={{ color: '#fff', fontSize: '9px' }}>✓</span>}
+      </div>
+    </button>
+  )
+}
+
+// ── Chip ──────────────────────────────────────────────────────────────────────
+
+export function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-xl border transition-all duration-150"
+      style={{
+        padding: '7px 13px',
+        fontSize: '12px',
+        borderColor: selected ? '#9b85e8' : '#3a2b58',
+        background: selected ? 'rgba(46,31,74,0.9)' : 'transparent',
+        color: selected ? '#f0eaff' : '#7a6b9a',
+        fontWeight: selected ? 500 : 400,
+      }}
     >
       {label}
     </button>
@@ -159,69 +201,56 @@ export function Chip({
 
 // ── Toggle ────────────────────────────────────────────────────────────────────
 
-export function Toggle({
-  label,
-  hint,
-  checked,
-  onChange,
-}: {
+export function Toggle({ label, hint, checked, onChange }: {
   label: string
   hint?: string
   checked: boolean
   onChange: (v: boolean) => void
 }) {
   return (
-    <div
-      className="flex items-center justify-between py-4 border-b border-[#2a1f42]"
-    >
+    <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #2a1f42' }}>
       <div className="flex-1 pr-4">
-        <p className="text-[14px] text-[#d4c8f0]">{label}</p>
-        {hint && <p className="text-[11px] text-[#7a6b9a] mt-0.5">{hint}</p>}
+        <p className="text-[13px]" style={{ color: '#d4c8f0' }}>{label}</p>
+        {hint && <p className="text-[11px] mt-0.5" style={{ color: '#7a6b9a' }}>{hint}</p>}
       </div>
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative w-10 h-[22px] rounded-full transition-colors duration-200 flex-shrink-0 ${
-          checked ? 'bg-[#6d4bc3]' : 'bg-[#3a2b58]'
-        }`}
+        className="relative flex-shrink-0 rounded-full transition-colors duration-200"
+        style={{ width: '40px', height: '22px', background: checked ? '#6d4bc3' : '#3a2b58' }}
       >
         <span
-          className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200 ${
-            checked ? 'left-[21px]' : 'left-[3px]'
-          }`}
+          className="absolute top-[3px] rounded-full bg-white shadow-sm transition-all duration-200"
+          style={{ width: '16px', height: '16px', left: checked ? '21px' : '3px' }}
         />
       </button>
     </div>
   )
 }
 
-// ── Filter row (single-select pill group) ────────────────────────────────────
+// ── FilterRow ─────────────────────────────────────────────────────────────────
 
-export function FilterRow({
-  question,
-  options,
-  value,
-  onChange,
-}: {
+export function FilterRow({ question, options, value, onChange }: {
   question: string
   options: { label: string; value: string }[]
   value: string
   onChange: (v: string) => void
 }) {
   return (
-    <div className="py-4 border-b border-[#2a1f42]">
-      <p className="text-[13px] font-medium text-[#c3b3ff] mb-3">{question}</p>
+    <div className="py-4" style={{ borderBottom: '1px solid #2a1f42' }}>
+      <p className="font-medium mb-3" style={{ color: '#c3b3ff', fontSize: '13px' }}>{question}</p>
       <div className="flex flex-wrap gap-2">
-        {options.map((opt) => (
+        {options.map(opt => (
           <button
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`px-4 py-1.5 rounded-full text-[12px] border transition-all duration-150 ${
-              value === opt.value
-                ? 'border-[#9b85e8] bg-[#2e1f4a] text-[#f0eaff]'
-                : 'border-[#3a2b58] text-[#7a6b9a] hover:border-[#5a4578]'
-            }`}
+            className="px-4 py-1.5 rounded-full text-[12px] border transition-all duration-150"
+            style={{
+              borderColor: value === opt.value ? '#9b85e8' : '#3a2b58',
+              background: value === opt.value ? 'rgba(46,31,74,0.8)' : 'transparent',
+              color: value === opt.value ? '#f0eaff' : '#7a6b9a',
+            }}
           >
             {opt.label}
           </button>
@@ -231,12 +260,42 @@ export function FilterRow({
   )
 }
 
-// ── Bottom nav bar ────────────────────────────────────────────────────────────
+// ── ProgressBar ───────────────────────────────────────────────────────────────
+
+export function ProgressBar({ current, total }: { current: number; total: number }) {
+  const pct = ((current - 1) / (total - 1)) * 100
+  return (
+    <div className="relative w-full h-[2px] mb-10" style={{ background: '#2a1f42' }}>
+      <div
+        className="absolute left-0 top-0 h-full transition-all duration-500"
+        style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #6d4bc3, #c8922a)' }}
+      />
+      <div className="absolute inset-0 flex items-center justify-between">
+        {Array.from({ length: total }).map((_, i) => {
+          const isActive = i === current - 1
+          const isDone = i < current - 1
+          return (
+            <div
+              key={i}
+              className="rounded-full transition-all duration-300 flex-shrink-0"
+              style={{
+                width: isActive ? '8px' : '4px',
+                height: isActive ? '8px' : '4px',
+                background: isDone ? '#9b85e8' : isActive ? '#c8922a' : '#2e2040',
+                marginTop: isActive ? '-3px' : '-1px',
+              }}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── NavBar ────────────────────────────────────────────────────────────────────
 
 export function NavBar({
-  onBack,
-  onNext,
-  onSkip,
+  onBack, onNext, onSkip,
   nextLabel = 'continue',
   backVisible = true,
   skipVisible = false,
@@ -251,34 +310,39 @@ export function NavBar({
   nextDisabled?: boolean
 }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between px-6 py-6 border-t border-[#2e2820] bg-[#1b1328]/80 backdrop-blur-md z-50">
-  <button
-    type="button"
-    onClick={onBack}
-    className={`font-mono text-[12px] uppercase tracking-widest text-[#7a6b9a] hover:text-[#ddd2f7] ${!backVisible ? 'invisible' : ''}`}
-  >
-    ← back
-  </button>
-  
-  <div className="flex items-center gap-6">
-    {skipVisible && (
+    <div
+      className="fixed bottom-0 left-0 right-0 flex items-center justify-between px-6 py-6 z-40"
+      style={{ background: 'rgba(27,19,40,0.85)', backdropFilter: 'blur(12px)', borderTop: '1px solid #2e2820' }}
+    >
       <button
         type="button"
-        onClick={onSkip}
-        className="font-mono text-[12px] uppercase tracking-widest text-[#7a6b9a]"
+        onClick={onBack}
+        className="font-mono text-[11px] uppercase tracking-widest transition-colors"
+        style={{ color: '#7a6b9a', visibility: backVisible ? 'visible' : 'hidden' }}
       >
-        skip
+        ← back
       </button>
-    )}
-    <button
-      type="button"
-      onClick={onNext}
-      disabled={nextDisabled}
-      className="px-8 py-3 rounded-full bg-[#c8922a] text-[#1a1410] font-mono text-[12px] font-bold uppercase tracking-widest active:scale-95 transition-all disabled:opacity-30"
-    >
-      {nextLabel} →
-    </button>
-  </div>
-</div>
+      <div className="flex items-center gap-5">
+        {skipVisible && (
+          <button type="button" onClick={onSkip} className="font-mono text-[11px] uppercase tracking-widest" style={{ color: '#5a4b78' }}>
+            skip
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={nextDisabled}
+          className="rounded-full font-mono text-[11px] font-bold uppercase tracking-widest transition-all active:scale-95"
+          style={{
+            padding: '12px 28px',
+            background: nextDisabled ? 'rgba(200,146,42,0.2)' : '#c8922a',
+            color: nextDisabled ? 'rgba(26,20,16,0.4)' : '#1a1410',
+            cursor: nextDisabled ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {nextLabel} →
+        </button>
+      </div>
+    </div>
   )
 }
