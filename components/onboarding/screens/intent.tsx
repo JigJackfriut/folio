@@ -1,59 +1,35 @@
 'use client'
 
 import { useOnboarding } from '@/lib/onboarding-store'
-import { Heading, Sub, EditorialInput, Chip } from '@/components/onboarding/ui'
+import { Heading, Sub, OptionCard, type ScreenProps } from '@/components/onboarding/ui'
 
-const GENDERS = ['Man', 'Woman', 'Non-binary', 'Trans man', 'Trans woman', 'Genderfluid', 'Agender', 'Intersex', 'Prefer not to say']
+const INTENTS = [
+  { value: 'something_real', title: 'Something real',    desc: 'Long-term, committed — the whole thing',                  icon: '♾' },
+  { value: 'casual',         title: 'Something casual',  desc: 'No pressure, just see where it goes',                     icon: '✦' },
+  { value: 'friends_first',  title: 'Friends first',     desc: 'Build a real connection before anything else',            icon: '◯' },
+  { value: 'companion',      title: 'A companion',       desc: 'Someone to share life with — dates, trips, the everyday', icon: '⌂' },
+  { value: 'no_idea',        title: 'Honestly? No idea', desc: 'Just here to see what happens',                           icon: '?' },
+]
 
-export function BasicsScreen() {
+export function IntentScreen({ onNext }: ScreenProps) {
   const { state, set } = useOnboarding()
-
-  const toggle = (g: string) => {
-    const cur = state.gender_identity
-    set({ gender_identity: cur.includes(g) ? cur.filter(x => x !== g) : [...cur, g] })
-  }
-
   return (
     <>
-      <Heading>who are you?</Heading>
-      <Sub>just the basics — you&apos;ll tell your story later</Sub>
-
-      <div className="flex gap-5 items-start">
-        <div className="w-28 flex-shrink-0">
-          <EditorialInput
-            label="Age"
-            type="number"
-            min={18}
-            max={99}
-            placeholder="27"
-            value={state.age}
-            onChange={e => set({ age: e.target.value })}
-            hint="18 or over"
-          />
-        </div>
-        <div className="flex-1">
-          <EditorialInput
-            label="I go by..."
-            placeholder="Name or handle"
-            value={state.display_name}
-            onChange={e => set({ display_name: e.target.value })}
-            maxLength={40}
-            hint="shown on your folio"
-          />
-        </div>
-      </div>
-
-      <p
-        className="font-serif italic mb-3"
-        style={{ fontSize: '15px', color: '#7a6b9a', fontFamily: 'EB Garamond, Georgia, serif' }}
-      >
-        I identify as...
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {GENDERS.map(g => (
-          <Chip key={g} label={g} selected={state.gender_identity.includes(g)} onClick={() => toggle(g)} />
-        ))}
-      </div>
+      <Heading>what are you actually looking for?</Heading>
+      <Sub>be honest with yourself — you can change this later</Sub>
+      {INTENTS.map(i => (
+        <OptionCard
+          key={i.value}
+          icon={i.icon}
+          title={i.title}
+          description={i.desc}
+          selected={state.intent_type === i.value}
+          onClick={() => {
+            set({ intent_type: i.value })
+            setTimeout(() => onNext?.(), 180)
+          }}
+        />
+      ))}
     </>
   )
 }
