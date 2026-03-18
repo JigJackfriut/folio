@@ -11,9 +11,7 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState('')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
-  const [usernameStatus, setUsernameStatus] = useState<
-    'idle' | 'checking' | 'taken' | 'available'
-  >('idle')
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'taken' | 'available'>('idle')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -30,32 +28,25 @@ export default function LoginPage() {
     const hasMixed = /[A-Z]/.test(password) && /[0-9]/.test(password)
     return hasMixed && password.length >= 8 ? 3 : 2
   }
-
   const strength = getPasswordStrength()
 
   const checkUsername = (value: string) => {
     const cleaned = value.toLowerCase().replace(/[^a-z0-9._]/g, '')
     setUsername(cleaned)
     setUsernameStatus('idle')
-
     if (cleaned.length < 3) return
-
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (abortControllerRef.current) abortControllerRef.current.abort()
-
     setUsernameStatus('checking')
-
     debounceRef.current = setTimeout(async () => {
       const controller = new AbortController()
       abortControllerRef.current = controller
-
       try {
         const { data, error: fetchError } = await supabase
           .from('profiles')
           .select('handle')
           .eq('handle', cleaned)
           .maybeSingle()
-
         if (controller.signal.aborted) return
         if (fetchError) throw fetchError
         setUsernameStatus(data ? 'taken' : 'available')
@@ -69,38 +60,29 @@ export default function LoginPage() {
     e?.preventDefault()
     setError('')
 
-    if (mode === 'signup') {
-      if (usernameStatus !== 'available') {
-        setError('Username is not available.')
-        return
-      }
-      if (password.length < 6) {
-        setError('Password is too short.')
-        return
-      }
-    }
-
     setLoading(true)
 
     try {
       if (mode === 'signup') {
+        if (usernameStatus !== 'available') throw new Error('Username is not available.')
+        
+        // SIGNUP: We only sign up. Profile creation should be handled by a DB trigger.
+        // We will save the 'handle' to the profile in the first step of Onboarding.
         const { data, error: authErr } = await supabase.auth.signUp({
-          email,
+          email: email.toLowerCase().trim(),
           password,
+          options: {
+            data: { 
+              // Passing handle in metadata so the DB trigger can grab it if set up
+              handle: username 
+            }
+          }
         })
         if (authErr) throw authErr
-
-        if (data.user) {
-          const { error: profErr } = await supabase.from('profiles').upsert({
-            id: data.user.id,
-            handle: username,
-            email: email.toLowerCase(),
-          })
-          if (profErr) throw profErr
-        }
-
+        
         router.push('/onboarding')
       } else {
+        // LOGIN logic
         let loginEmail = identifier.trim().toLowerCase()
 
         if (!loginEmail.includes('@')) {
@@ -114,14 +96,26 @@ export default function LoginPage() {
           loginEmail = profile.email
         }
 
-        const { error: logErr } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password,
+        const { data: signInData, error: logErr } = await supabase.auth.signInWithPassword({ 
+          email: loginEmail, 
+          password 
         })
-
         if (logErr) throw new Error('Invalid login credentials.')
-        router.push('/feed')
+
+        // Check if onboarding is done
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_complete')
+          .eq('id', signInData.user.id)
+          .single()
+
+        if (profile?.onboarding_complete) {
+          router.push('/feed')
+        } else {
+          router.push('/onboarding')
+        }
       }
+      router.refresh()
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -129,13 +123,11 @@ export default function LoginPage() {
     }
   }
 
-  const isFormInvalid =
-    mode === 'signup'
-      ? !email || !password || usernameStatus !== 'available' || password.length < 6
-      : !identifier || !password
+  const isFormInvalid = mode === 'signup'
+    ? (!email || !password || usernameStatus !== 'available' || password.length < 6)
+    : (!identifier || !password)
 
-  const inputStyle =
-    'w-full rounded-xl border border-[#4f3c73] bg-[#2a1f42]/90 px-4 py-3 font-sans text-sm text-[#f5efff] outline-none transition-all placeholder:text-[#a99abb] focus:border-[#c3b3ff] focus:ring-2 focus:ring-[#8f73e633]'
+  const inputStyle = 'w-full rounded-xl border border-[#4f3c73] bg-[#2a1f42]/90 px-4 py-3 font-sans text-sm text-[#f5efff] outline-none transition-all placeholder:text-[#a99abb] focus:border-[#c3b3ff] focus:ring-2 focus:ring-[#8f73e633]'
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#1b1328] px-6 selection:bg-[#8f73e655]">
@@ -151,7 +143,6 @@ export default function LoginPage() {
             >
               folio.
             </motion.h1>
-
             <p className="font-mono text-[11px] font-bold uppercase tracking-[0.42em] text-[#ddd2f7] opacity-100">
               Any meaningful connection
             </p>
@@ -168,18 +159,12 @@ export default function LoginPage() {
                     <button
                       key={t}
                       type="button"
-                      onClick={() => {
-                        setMode(t)
-                        setError('')
-                      }}
+                      onClick={() => { setMode(t); setError('') }}
                       className={`relative z-10 flex-1 rounded-lg py-2.5 font-mono text-xs uppercase tracking-[0.18em] transition-colors ${
-                        mode === t
-                          ? 'font-bold text-white'
-                          : 'text-[#c1b4df] hover:text-[#f0eaff]'
+                        mode === t ? 'font-bold text-white' : 'text-[#c1b4df] hover:text-[#f0eaff]'
                       }`}
                     >
                       {t === 'login' ? 'log in' : 'sign up'}
-
                       {mode === t && (
                         <motion.div
                           layoutId="activeTab"
@@ -205,10 +190,7 @@ export default function LoginPage() {
                     <>
                       <div className="space-y-1.5">
                         <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-sm text-[#a696c8]">
-                            @
-                          </span>
-
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-sm text-[#a696c8]">@</span>
                           <input
                             type="text"
                             autoComplete="username"
@@ -217,33 +199,16 @@ export default function LoginPage() {
                             onChange={(e) => checkUsername(e.target.value)}
                             className={`${inputStyle} pl-8`}
                           />
-
                           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                            {usernameStatus === 'checking' && (
-                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#c3b3ff] border-t-transparent" />
-                            )}
-                            {usernameStatus === 'available' && (
-                              <span className="text-xs text-violet-300">✓</span>
-                            )}
-                            {usernameStatus === 'taken' && (
-                              <span className="text-xs text-rose-400">×</span>
-                            )}
+                            {usernameStatus === 'checking' && <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#c3b3ff] border-t-transparent" />}
+                            {usernameStatus === 'available' && <span className="text-xs text-violet-300">✓</span>}
+                            {usernameStatus === 'taken' && <span className="text-xs text-rose-400">×</span>}
                           </div>
                         </div>
-
-                        <p
-                          className={`px-1 font-mono text-[10px] ${
-                            usernameStatus === 'taken'
-                              ? 'text-rose-400'
-                              : 'text-[#c1b4dc]'
-                          }`}
-                        >
-                          {usernameStatus === 'taken'
-                            ? 'Already taken'
-                            : 'At least 3 characters'}
+                        <p className={`px-1 font-mono text-[10px] ${usernameStatus === 'taken' ? 'text-rose-400' : 'text-[#c1b4dc]'}`}>
+                          {usernameStatus === 'taken' ? 'Already taken' : 'At least 3 characters'}
                         </p>
                       </div>
-
                       <input
                         type="email"
                         autoComplete="email"
@@ -278,7 +243,6 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className={inputStyle}
                   />
-
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -287,33 +251,17 @@ export default function LoginPage() {
                     {showPassword ? 'hide' : 'show'}
                   </button>
                 </div>
-
                 {mode === 'signup' && (
                   <div className="flex h-1.5 gap-1 px-1">
                     {[1, 2, 3].map((step) => (
-                      <div
-                        key={step}
-                        className={`h-full flex-1 rounded-full transition-colors duration-500 ${
-                          strength >= step
-                            ? strength === 1
-                              ? 'bg-rose-500/70'
-                              : strength === 2
-                              ? 'bg-amber-400/70'
-                              : 'bg-violet-400/80'
-                            : 'bg-[#3a2b58]'
-                        }`}
-                      />
+                      <div key={step} className={`h-full flex-1 rounded-full transition-colors duration-500 ${strength >= step ? (strength === 1 ? 'bg-rose-500/70' : strength === 2 ? 'bg-amber-400/70' : 'bg-violet-400/80') : 'bg-[#3a2b58]'}`} />
                     ))}
                   </div>
                 )}
               </div>
 
               <div className="flex h-4 items-center justify-center">
-                {error && (
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-rose-400">
-                    {error}
-                  </p>
-                )}
+                {error && <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-rose-400">{error}</p>}
               </div>
 
               <button
@@ -321,20 +269,12 @@ export default function LoginPage() {
                 disabled={loading || isFormInvalid}
                 className="w-full rounded-xl bg-[#6d4bc3] py-4 font-mono text-sm font-bold uppercase tracking-[0.22em] text-white shadow-lg shadow-[#6d4bc340] transition-all hover:shadow-[#6d4bc360] active:scale-[0.98] disabled:bg-[#3b2f4f] disabled:text-[#9587b0] disabled:opacity-60"
               >
-                {loading
-                  ? 'Processing...'
-                  : mode === 'login'
-                  ? '→ log in'
-                  : '→ create account'}
+                {loading ? 'Processing...' : mode === 'login' ? '→ log in' : '→ create account'}
               </button>
 
               <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#b8abcf]">
                 {mode === 'login' ? "don't have an account?" : 'already a member?'}{' '}
-                <button
-                  type="button"
-                  onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-                  className="text-[#e4dbff] hover:underline"
-                >
+                <button type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-[#e4dbff] hover:underline">
                   {mode === 'login' ? 'sign up' : 'log in'}
                 </button>
               </p>
