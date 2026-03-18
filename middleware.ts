@@ -23,18 +23,34 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
+
   const isPublicRoute =
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/auth')
 
+  const isOnboardingRoute = pathname.startsWith('/onboarding')
+
+  // Not logged in → send to login
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Logged in → check onboarding_complete
+  if (user && !isPublicRoute && !isOnboardingRoute) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_complete')
+      .eq('id', user.id)
+      .single()
+
+    // No profile or onboarding not done → send to onboarding
+    if (!profile?.onboarding_complete) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
   }
 
   return supabaseResponse
@@ -43,3 +59,4 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
+
