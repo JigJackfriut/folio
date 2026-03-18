@@ -3,103 +3,102 @@
 import { useState, useMemo } from 'react'
 import { TAG_CATEGORIES, POPULAR_TAGS, CATEGORY_LABELS, type TagEntry, type TagTier } from '@/lib/tags'
 
-const TIER_STYLES: Record<TagTier, string> = {
-  public: 'border-[#9b85e8] bg-[#2e1f4a] text-[#f0eaff]',
-  shared: 'border-[#7F77DD] bg-[#EEEDFE]/10 text-[#c3b3ff]',
-  filter: 'border-[#1D9E75] bg-[#E1F5EE]/10 text-[#5DCAA5]',
-}
+const TIERS: { id: TagTier; label: string; icon: string; desc: string; color: string; bg: string; border: string }[] = [
+  { id: 'public', label: 'Public', icon: '◎', desc: 'On profile', color: '#e8e0ff', bg: 'rgba(155, 133, 232, 0.1)', border: '#9b85e8' },
+  { id: 'shared', label: 'Matched', icon: '⬡', desc: 'Mutual only', color: '#c3b3ff', bg: 'rgba(127, 119, 221, 0.1)', border: '#7F77DD' },
+  { id: 'filter', label: 'Filter', icon: '▿', desc: 'Hidden', color: '#5DCAA5', bg: 'rgba(29, 158, 117, 0.1)', border: '#1D9E75' },
+]
 
-const TIER_CYCLE: (TagTier | null)[] = [null, 'public', 'shared', 'filter']
-
-function getTier(tags: TagEntry[], name: string): TagTier | null {
-  return tags.find((t) => t.name === name)?.tier ?? null
-}
-
-function cycleTier(tags: TagEntry[], name: string): TagEntry[] {
-  const current = getTier(tags, name)
-  const idx = TIER_CYCLE.indexOf(current)
-  const next = TIER_CYCLE[(idx + 1) % TIER_CYCLE.length]
-  if (!next) return tags.filter((t) => t.name !== name)
-  const filtered = tags.filter((t) => t.name !== name)
-  return [...filtered, { name, tier: next }]
-}
-
-export function TagPicker({
-  value,
-  onChange,
-}: {
-  value: TagEntry[]
-  onChange: (tags: TagEntry[]) => void
-}) {
+export function TagPicker({ value, onChange }: { value: TagEntry[], onChange: (tags: TagEntry[]) => void }) {
   const [activeCategory, setActiveCategory] = useState('popular')
   const [search, setSearch] = useState('')
+  const [isRefining, setIsRefining] = useState(false)
 
-  const categories = Object.keys(TAG_CATEGORIES)
-
-  const filteredSections = useMemo(() => {
-    const cat = TAG_CATEGORIES[activeCategory] ?? {}
-    if (!search.trim()) return cat
-    const q = search.toLowerCase()
-    const result: Record<string, string[]> = {}
-    Object.entries(cat).forEach(([sec, tags]) => {
-      const matched = tags.filter((t) => t.toLowerCase().includes(q))
-      if (matched.length) result[sec] = matched
-    })
-    // Also search other categories when searching
-    if (search.trim()) {
-      Object.entries(TAG_CATEGORIES).forEach(([, sections]) => {
-        Object.entries(sections).forEach(([sec, tags]) => {
-          const matched = tags.filter(
-            (t) => t.toLowerCase().includes(q) && !Object.values(result).flat().includes(t)
-          )
-          if (matched.length) result[sec] = [...(result[sec] ?? []), ...matched]
-        })
-      })
+  const handleToggleTag = (name: string) => {
+    const exists = value.find(t => t.name === name)
+    if (exists) {
+      onChange(value.filter(t => t.name !== name))
+    } else {
+      onChange([...value, { name, tier: 'public' }])
     }
-    return result
+  }
+
+  const updateTier = (name: string, tier: TagTier) => {
+    onChange(value.map(t => t.name === name ? { ...t, tier } : t))
+  }
+
+  const filteredTags = useMemo(() => {
+    const sections = search ? Object.values(TAG_CATEGORIES).flatMap(s => Object.entries(s)) : Object.entries(TAG_CATEGORIES[activeCategory] || {})
+    return sections.map(([label, tags]) => ({
+      label,
+      tags: tags.filter(t => t.toLowerCase().includes(search.toLowerCase()))
+    })).filter(s => s.tags.length > 0)
   }, [activeCategory, search])
 
-  const selectedPub = value.filter((t) => t.tier === 'public')
-  const selectedShared = value.filter((t) => t.tier === 'shared')
-  const selectedFilter = value.filter((t) => t.tier === 'filter')
+  if (isRefining) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <button onClick={() => setIsRefining(false)} className="text-[11px] font-mono text-[#7a6b9a] uppercase tracking-widest">← Back to adding</button>
+        <div className="space-y-8">
+          {TIERS.map(tier => (
+            <div key={tier.id} className="rounded-2xl p-4 border border-[#2a1f42] bg-[rgba(30,21,48,0.2)]">
+              <div className="flex items-center gap-2 mb-4">
+                <span style={{ color: tier.color }}>{tier.icon}</span>
+                <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: tier.color }}>{tier.label}</span>
+                <span className="text-[10px] text-[#5a4b78]">— {tier.desc}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {value.filter(t => t.tier === tier.id).map(tag => (
+                  <div key={tag.name} className="flex items-center gap-1 rounded-full border px-3 py-1.5" style={{ borderColor: tier.border, color: tier.color, backgroundColor: tier.bg }}>
+                    <span className="text-[12px]">{tag.name}</span>
+                    <select 
+                      className="bg-transparent border-none text-[10px] cursor-pointer focus:ring-0 opacity-40 hover:opacity-100"
+                      onChange={(e) => updateTier(tag.name, e.target.value as TagTier)}
+                    >
+                      <option value="" disabled selected>move</option>
+                      {TIERS.filter(t => t.id !== tier.id).map(t => (
+                        <option key={t.id} value={t.id} className="bg-[#1b1328]">{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                {value.filter(t => t.tier === tier.id).length === 0 && <p className="text-[11px] italic text-[#3a2b58]">No tags assigned here</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Legend */}
-      <div className="flex gap-4 flex-wrap">
-        {([['public', '#9b85e8', 'everyone sees'], ['shared', '#7F77DD', 'match-only'], ['filter', '#1D9E75', 'invisible filter']] as const).map(([tier, color, label]) => (
-          <div key={tier} className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-            <span className="font-mono text-[10px] text-[#7a6b9a]">{label}</span>
-          </div>
-        ))}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="relative flex-1 mr-3">
+          <input 
+            value={search} 
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search interests..." 
+            className="w-full bg-[#1b1328] border-b border-[#3a2b58] py-2 text-[14px] text-[#f5efff] outline-none focus:border-[#9b85e8] transition-colors"
+          />
+        </div>
+        {value.length > 0 && (
+          <button 
+            onClick={() => setIsRefining(true)}
+            className="px-4 py-2 rounded-full bg-[#6d4bc3] text-white text-[11px] font-mono uppercase tracking-tighter"
+          >
+            Refine Privacy ({value.length})
+          </button>
+        )}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a3b68] text-[13px] pointer-events-none">⌕</span>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search — boxing, BDSM, cottagecore..."
-          className="w-full bg-[#1e1530]/60 border border-[#3a2b58] rounded-xl pl-8 pr-4 py-2.5 text-[13px] text-[#f5efff] placeholder:text-[#4a3b68] outline-none focus:border-[#6d4bc3] transition-colors"
-        />
-      </div>
-
-      {/* Category tabs */}
       {!search && (
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
+        <div className="flex gap-2 overflow-x-auto py-2 scrollbar-hide">
+          {Object.keys(TAG_CATEGORIES).map(cat => (
+            <button 
+              key={cat} 
               onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1.5 rounded-full text-[12px] font-mono whitespace-nowrap border transition-all ${
-                activeCategory === cat
-                  ? 'bg-[#6d4bc3] border-[#6d4bc3] text-white'
-                  : 'border-[#3a2b58] text-[#7a6b9a] hover:border-[#5a4578]'
-              }`}
+              className={`px-3 py-1 rounded-full text-[10px] font-mono uppercase border transition-all ${activeCategory === cat ? 'border-[#9b85e8] text-[#f5efff] bg-[#2e1f4a]' : 'border-[#3a2b58] text-[#7a6b9a]'}`}
             >
               {CATEGORY_LABELS[cat]}
             </button>
@@ -107,65 +106,27 @@ export function TagPicker({
         </div>
       )}
 
-      {/* Tag grid */}
-      <div className="overflow-y-auto max-h-[240px] pr-1 space-y-4 scrollbar-thin scrollbar-thumb-[#3a2b58] scrollbar-track-transparent">
-        {Object.entries(filteredSections).map(([section, tags]) => (
-          <div key={section}>
-            <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#4a3b68] mb-2">
-              {section}
-            </p>
+      <div className="max-h-[300px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+        {filteredTags.map(section => (
+          <div key={section.label}>
+            <p className="text-[10px] font-mono text-[#4a3b68] uppercase mb-2 tracking-widest">{section.label}</p>
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => {
-                const tier = getTier(value, tag)
-                const isPopular = POPULAR_TAGS.has(tag)
+              {section.tags.map(tag => {
+                const isSelected = value.some(t => t.name === tag)
                 return (
                   <button
                     key={tag}
-                    type="button"
-                    onClick={() => onChange(cycleTier(value, tag))}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] border transition-all duration-150 ${
-                      tier
-                        ? TIER_STYLES[tier]
-                        : 'border-[#3a2b58] text-[#7a6b9a] hover:border-[#5a4578] hover:text-[#a99abb]'
-                    }`}
+                    onClick={() => handleToggleTag(tag)}
+                    className={`px-3 py-1.5 rounded-xl text-[12px] border transition-all duration-200 ${isSelected ? 'border-[#9b85e8] bg-[#2e1f4a] text-[#f5efff]' : 'border-[#2a1f42] text-[#7a6b9a] hover:border-[#3a2b58]'}`}
                   >
                     {tag}
-                    {isPopular && !tier && (
-                      <span className="text-[9px] bg-[#FAC775]/20 text-[#FAC775] px-1.5 py-0.5 rounded-full font-mono">
-                        popular
-                      </span>
-                    )}
                   </button>
                 )
               })}
             </div>
           </div>
         ))}
-        {Object.keys(filteredSections).length === 0 && (
-          <p className="text-[13px] text-[#4a3b68] py-4">No tags found</p>
-        )}
       </div>
-
-      {/* Selected summary */}
-      {value.length > 0 && (
-        <div className="bg-[#1e1530]/60 border border-[#2a1f42] rounded-xl p-3 mt-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#4a3b68] mb-2">
-            selected · tap to cycle privacy
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {value.map(({ name, tier }) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => onChange(cycleTier(value, name))}
-                className={`px-2.5 py-1 rounded-full text-[11px] border transition-all ${TIER_STYLES[tier]}`}
-              >
-                {name} · {tier}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
