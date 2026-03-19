@@ -8,10 +8,12 @@ export interface TagEntry {
 export const TAG_CATEGORIES: Record<string, Record<string, string[]>> = {
   popular: {
     'trending now': [
-      'Bookworm', 'Night owl', 'Gamer', 'Cinephile', 'Neurodivergent',
-      'Music nerd', 'Homebody', 'Dog parent', '420 friendly', 'BDSM',
+      'Bookworm', 'In therapy', 'Gamer', 'Cinephile', 'Neurodivergent',
+      'Music nerd', 'Homebody', 'Dog parent', 'Cat parent', '420 friendly', 'BDSM',
       'Overthinker', 'Traveler', 'Fitness', 'Cottagecore', 'Dark academia',
       'Dry humor', 'Introvert', 'Foodie', 'True crime', 'LGBTQ+',
+      'Polyamorous', 'Kink-curious', 'Non-binary', 'Sober curious',
+      'Night Owl', 'Bisexual', 'Queer', 'Sex-positive', 'ENM',
     ],
   },
   interests: {
@@ -132,3 +134,4 @@ export const CATEGORY_LABELS: Record<string, string> = {
   identity: 'Identity',
   communities: 'Communities',
 }
+
