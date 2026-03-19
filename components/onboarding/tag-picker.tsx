@@ -3,15 +3,66 @@
 import { useState, useMemo } from 'react'
 import { TAG_CATEGORIES, POPULAR_TAGS, CATEGORY_LABELS, type TagEntry, type TagTier } from '@/lib/tags'
 
-// ── Tier config ───────────────────────────────────────────────────────────────
+// ── Tier colors ───────────────────────────────────────────────────────────────
 
-const TIERS: { id: TagTier; symbol: string; label: string }[] = [
-  { id: 'public',  symbol: '◎', label: 'public'  },
-  { id: 'shared',  symbol: '⬡', label: 'matched' },
-  { id: 'filter',  symbol: '▿', label: 'filter'  },
-]
+const TIER_CONFIG: Record<TagTier, { label: string; activeColor: string; activeBg: string }> = {
+  public:  { label: 'Public',  activeColor: '#fff', activeBg: '#7c3aed' },
+  shared:  { label: 'Match',   activeColor: '#fff', activeBg: '#b45309' },
+  filter:  { label: 'Filter',  activeColor: '#fff', activeBg: '#0f766e' },
+}
 
-// ── Selected tag chip ─────────────────────────────────────────────────────────
+const TIER_ORDER: TagTier[] = ['public', 'shared', 'filter']
+
+// ── Segmented control ─────────────────────────────────────────────────────────
+
+function TierToggle({
+  tier,
+  onChange,
+}: {
+  tier: TagTier
+  onChange: (t: TagTier) => void
+}) {
+  return (
+    <div
+      className="flex items-center rounded-full overflow-hidden"
+      style={{
+        background: 'rgba(0,0,0,0.3)',
+        border: '1px solid #2a1f42',
+        height: '22px',
+      }}
+    >
+      {TIER_ORDER.map(t => {
+        const config = TIER_CONFIG[t]
+        const isActive = tier === t
+        return (
+          <button
+            key={t}
+            type="button"
+            onClick={() => onChange(t)}
+            className="transition-all duration-150"
+            style={{
+              padding: '0 8px',
+              height: '100%',
+              fontSize: '10px',
+              fontFamily: 'monospace',
+              fontWeight: isActive ? 600 : 400,
+              background: isActive ? config.activeBg : 'transparent',
+              color: isActive ? config.activeColor : '#4a3b68',
+              letterSpacing: '0.03em',
+              whiteSpace: 'nowrap',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {config.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Selected tag ──────────────────────────────────────────────────────────────
 
 function SelectedTag({
   name,
@@ -24,55 +75,31 @@ function SelectedTag({
   onTierChange: (t: TagTier) => void
   onRemove: () => void
 }) {
+  const config = TIER_CONFIG[tier]
   return (
     <div
-      className="inline-flex items-center gap-2 rounded-full"
+      className="flex items-center gap-2 rounded-2xl"
       style={{
-        padding: '6px 10px 6px 13px',
-        background: '#2e1f4a',
-        border: '1px solid #9b85e8',
+        padding: '8px 12px',
+        background: 'rgba(30,21,48,0.8)',
+        border: `1px solid ${config.activeBg}`,
       }}
     >
-      {/* Tag name */}
-      <span style={{ fontSize: '12px', color: '#f0eaff', whiteSpace: 'nowrap' }}>{name}</span>
-
-      {/* Tier icons — all three always visible */}
-      <div className="flex items-center gap-1">
-        {TIERS.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onTierChange(t.id)}
-            title={t.label}
-            style={{
-              fontSize: '11px',
-              color: tier === t.id ? '#ffffff' : '#4a3b68',
-              lineHeight: 1,
-              padding: '2px',
-              transition: 'color 0.1s',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            {t.symbol}
-          </button>
-        ))}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span style={{ fontSize: '13px', color: '#f0eaff' }}>{name}</span>
+        <TierToggle tier={tier} onChange={onTierChange} />
       </div>
-
-      {/* Remove */}
       <button
         type="button"
         onClick={onRemove}
         style={{
-          fontSize: '10px',
-          color: '#4a3b68',
-          lineHeight: 1,
-          padding: '2px',
+          fontSize: '11px',
+          color: '#3a2b58',
           background: 'none',
           border: 'none',
           cursor: 'pointer',
           marginLeft: '2px',
+          flexShrink: 0,
         }}
       >
         ✕
@@ -81,7 +108,7 @@ function SelectedTag({
   )
 }
 
-// ── Pool tag chip ─────────────────────────────────────────────────────────────
+// ── Pool tag ──────────────────────────────────────────────────────────────────
 
 function PoolTag({
   name,
@@ -105,8 +132,8 @@ function PoolTag({
         color: '#7a6b9a',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = '#6d4bc3'
-        e.currentTarget.style.color = '#c3b3ff'
+        e.currentTarget.style.borderColor = '#7c3aed'
+        e.currentTarget.style.color = '#c4b5fd'
       }}
       onMouseLeave={e => {
         e.currentTarget.style.borderColor = '#3a2b58'
@@ -115,7 +142,13 @@ function PoolTag({
     >
       {name}
       {isHot && (
-        <span style={{ fontSize: '8px', background: 'rgba(250,199,117,0.15)', color: '#FAC775', padding: '1px 5px', borderRadius: '99px' }}>
+        <span style={{
+          fontSize: '8px',
+          background: 'rgba(250,199,117,0.15)',
+          color: '#FAC775',
+          padding: '1px 5px',
+          borderRadius: '99px',
+        }}>
           hot
         </span>
       )}
@@ -164,29 +197,35 @@ export function TagPicker({
   }, [activeCategory, search])
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
+
+      {/* ── Legend ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {TIER_ORDER.map(t => {
+          const c = TIER_CONFIG[t]
+          return (
+            <div key={t} className="flex items-center gap-1.5">
+              <span
+                className="rounded-full"
+                style={{ width: '8px', height: '8px', background: c.activeBg, display: 'inline-block', flexShrink: 0 }}
+              />
+              <span className="font-mono text-[10px]" style={{ color: '#5a4b78' }}>
+                <span style={{ color: '#a99abb' }}>{c.label}</span>
+                {t === 'public'  && ' — everyone sees this'}
+                {t === 'shared'  && ' — revealed on match'}
+                {t === 'filter'  && ' — invisible, filters your feed'}
+              </span>
+            </div>
+          )
+        })}
+      </div>
 
       {/* ── Selected area ── */}
       {value.length > 0 && (
-        <div
-          className="rounded-2xl p-4"
-          style={{ border: '1px solid #2a1f42', background: 'rgba(30,21,48,0.6)' }}
-        >
-          {/* Persistent legend */}
-          <div className="flex items-center gap-3 mb-3">
-            <p className="font-mono text-[9px] uppercase tracking-[0.12em]" style={{ color: '#4a3b68' }}>
-              {value.length} selected
-            </p>
-            <div className="flex items-center gap-2 ml-auto">
-              {TIERS.map(t => (
-                <span key={t.id} className="font-mono text-[9px]" style={{ color: '#4a3b68' }}>
-                  <span style={{ color: '#7a6b9a' }}>{t.symbol}</span> {t.label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Selected tags */}
+        <div className="flex flex-col gap-2">
+          <p className="font-mono text-[9px] uppercase tracking-[0.12em]" style={{ color: '#4a3b68' }}>
+            {value.length} tag{value.length !== 1 ? 's' : ''} added
+          </p>
           <div className="flex flex-wrap gap-2">
             {value.map(({ name, tier }) => (
               <SelectedTag
@@ -203,7 +242,10 @@ export function TagPicker({
 
       {/* ── Search ── */}
       <div className="relative">
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#4a3b68', fontSize: '14px' }}>
+        <span
+          className="absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none"
+          style={{ color: '#4a3b68', fontSize: '14px' }}
+        >
           ⌕
         </span>
         <input
@@ -213,13 +255,13 @@ export function TagPicker({
           placeholder="Search interests..."
           className="w-full bg-transparent outline-none transition-colors"
           style={{
-            paddingLeft: '20px',
+            paddingLeft: '22px',
             paddingBottom: '9px',
             borderBottom: '1px solid #3a2b58',
             fontSize: '13px',
             color: '#f5efff',
           }}
-          onFocus={e => { e.currentTarget.style.borderBottomColor = '#9b85e8' }}
+          onFocus={e => { e.currentTarget.style.borderBottomColor = '#7c3aed' }}
           onBlur={e => { e.currentTarget.style.borderBottomColor = '#3a2b58' }}
         />
         {search && (
@@ -247,7 +289,7 @@ export function TagPicker({
                 fontSize: '10px',
                 textTransform: 'uppercase',
                 background: activeCategory === cat ? '#2e1f4a' : 'transparent',
-                borderColor: activeCategory === cat ? '#9b85e8' : '#3a2b58',
+                borderColor: activeCategory === cat ? '#7c3aed' : '#3a2b58',
                 color: activeCategory === cat ? '#f5efff' : '#7a6b9a',
               }}
             >
@@ -260,10 +302,9 @@ export function TagPicker({
       {/* ── Pool ── */}
       <div
         className="overflow-y-auto space-y-5 scrollbar-thin"
-        style={{ maxHeight: '320px', paddingRight: '4px' }}
+        style={{ maxHeight: '340px', paddingRight: '4px' }}
       >
         {filteredSections.map(([section, tags]) => {
-          // Only show tags not already selected
           const poolTags = tags.filter(t => !selectedNames.has(t))
           if (poolTags.length === 0) return null
           return (
@@ -287,20 +328,14 @@ export function TagPicker({
             </div>
           )
         })}
-
-        {filteredSections.every(([, tags]) => tags.every(t => selectedNames.has(t))) && (
-          <p className="text-[12px] py-4" style={{ color: '#4a3b68' }}>
-            {search ? `No results for "${search}"` : 'All tags in this category selected'}
-          </p>
-        )}
       </div>
 
-      {/* ── Empty state hint ── */}
       {value.length === 0 && (
         <p className="font-mono text-[10px] text-center" style={{ color: '#3a2b58' }}>
-          tap any tag above to add it
+          tap any tag to add it
         </p>
       )}
     </div>
   )
 }
+
