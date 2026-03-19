@@ -168,20 +168,21 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
 
   // ── Legend ──
   const legend = (
-    <div className="flex items-center gap-4 flex-wrap mb-1">
+    <div className="flex flex-col gap-2 rounded-xl p-3" style={{ background: 'rgba(30,21,48,0.6)', border: '1px solid #2a1f42' }}>
       {TIER_ORDER.map(t => {
         const c = TIER_CONFIG[t]
+        const desc: Record<string, string> = {
+          public: 'visible to everyone on your profile',
+          shared: 'hidden until you both match, then revealed to each other',
+          filter: 'never shown to anyone — quietly filters who appears in your feed',
+        }
         return (
-          <div key={t} className="flex items-center gap-1.5">
-            <span
-              style={{ width: '7px', height: '7px', borderRadius: '50%', background: c.bg, display: 'inline-block', flexShrink: 0 }}
-            />
-            <span className="font-mono" style={{ fontSize: '10px', color: '#5a4b78' }}>
-              <span style={{ color: '#a99abb' }}>{c.label}</span>
-              {t === 'public' && ' — everyone'}
-              {t === 'shared' && ' — on match'}
-              {t === 'filter' && ' — hidden'}
-            </span>
+          <div key={t} className="flex items-start gap-2.5">
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.bg, display: 'inline-block', flexShrink: 0, marginTop: '3px' }} />
+            <p style={{ fontSize: '12px', lineHeight: '1.5' }}>
+              <span style={{ color: '#f0eaff', fontWeight: 600 }}>{c.label}</span>
+              <span style={{ color: '#7a6b9a' }}> — {desc[t]}</span>
+            </p>
           </div>
         )
       })}
@@ -198,7 +199,7 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search interests..."
+          placeholder="Search tags..."
           className="w-full bg-transparent outline-none transition-colors"
           style={{
             paddingLeft: '22px',
