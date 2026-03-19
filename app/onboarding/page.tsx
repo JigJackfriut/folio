@@ -17,6 +17,18 @@ import { PreviewScreen }     from '@/components/onboarding/screens/preview'
 
 const TOTAL = 8
 
+// Step headings for the left column on desktop
+const STEP_HEADINGS: Record<number, { title: string; sub: string }> = {
+  1: { title: 'what do you\nactually want?',          sub: 'be honest with yourself' },
+  2: { title: 'who\nare you?',                         sub: 'just the basics' },
+  3: { title: 'where\nare you?',                       sub: 'sets your matching radius' },
+  4: { title: 'who do you\nwant to meet?',             sub: 'select all that apply' },
+  5: { title: 'a few things\nthat matter',             sub: 'invisible to others' },
+  6: { title: "what's\nactually you?",                 sub: 'tap to add tags' },
+  7: { title: 'write your\nfolio',                     sub: 'write like a person' },
+  8: { title: "here's how\nyou'll appear",             sub: 'edit anytime' },
+}
+
 export default function OnboardingPage() {
   const [step, setStep]     = useState(1)
   const [saving, setSaving] = useState(false)
@@ -26,7 +38,6 @@ export default function OnboardingPage() {
   const router    = useRouter()
   const supabase  = createClient()
 
-  // ── Validation per step ────────────────────────────────────────────────────
   const canNext: Record<number, boolean> = {
     1: !!state.intent_type,
     2: !!state.display_name.trim() && !!state.age && parseInt(state.age, 10) >= 18 && state.gender_identity.length > 0,
@@ -47,7 +58,6 @@ export default function OnboardingPage() {
   const goBack = () => navigate(Math.max(1, step - 1))
   const goSkip = () => navigate(Math.min(TOTAL, step + 1))
 
-  // ── Publish to Supabase ────────────────────────────────────────────────────
   const publish = async () => {
     setSaving(true)
     setError('')
@@ -140,7 +150,6 @@ export default function OnboardingPage() {
     }
   }
 
-  // ── Screen map ─────────────────────────────────────────────────────────────
   const screens: Record<number, React.ReactNode> = {
     1: <IntentScreen onNext={goNext} />,
     2: <BasicsScreen />,
@@ -152,16 +161,19 @@ export default function OnboardingPage() {
     8: <PreviewScreen />,
   }
 
+  const heading = STEP_HEADINGS[step]
+
   return (
     <main className="relative min-h-screen" style={{ background: '#1b1328' }}>
       <BackgroundGlow />
 
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="w-full max-w-sm mx-auto px-6 pt-14 pb-32">
+      <div className="relative z-10 min-h-screen flex flex-col">
+
+        {/* ── Mobile layout ── */}
+        <div className="lg:hidden w-full max-w-sm mx-auto px-6 pt-14 pb-32">
           <ProgressBar current={step} total={TOTAL} />
           <ScreenLabel step={step} />
           {screens[step]}
-
           {error && (
             <p className="font-mono text-[10px] uppercase tracking-[0.12em] mt-6 text-center" style={{ color: '#f87171' }}>
               {error}
@@ -169,6 +181,55 @@ export default function OnboardingPage() {
           )}
         </div>
 
+        {/* ── Desktop layout ── */}
+        <div className="hidden lg:flex flex-1 w-full max-w-6xl mx-auto px-12 pt-16 pb-32 gap-16">
+
+          {/* Left column — fixed context */}
+          <div className="w-80 flex-shrink-0 flex flex-col">
+            <ProgressBar current={step} total={TOTAL} />
+            <ScreenLabel step={step} />
+
+            {/* Large heroic heading */}
+            <h1
+              className="mt-6 leading-[1.1] whitespace-pre-line"
+              style={{
+                fontFamily: 'EB Garamond, Georgia, serif',
+                fontSize: '52px',
+                color: '#f5efff',
+              }}
+            >
+              {heading.title}
+            </h1>
+            <p
+              className="font-mono mt-4"
+              style={{ fontSize: '11px', color: '#5a4b78', letterSpacing: '0.06em' }}
+            >
+              {heading.sub}
+            </p>
+
+            {/* Step counter at bottom of left col */}
+            <div className="mt-auto pt-16">
+              <p className="font-mono" style={{ fontSize: '10px', color: '#3a2b58', letterSpacing: '0.1em' }}>
+                {String(step).padStart(2, '0')} / {String(TOTAL).padStart(2, '0')}
+              </p>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="w-[1px] self-stretch" style={{ background: '#2a1f42' }} />
+
+          {/* Right column — interaction */}
+          <div className="flex-1 min-w-0 overflow-y-auto">
+            {screens[step]}
+            {error && (
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] mt-6" style={{ color: '#f87171' }}>
+                {error}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Nav bar — shared across both layouts */}
         <NavBar
           onBack={goBack}
           onNext={goNext}
