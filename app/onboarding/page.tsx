@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useOnboarding } from '@/lib/onboarding-store'
@@ -17,22 +17,24 @@ import { PreviewScreen }     from '@/components/onboarding/screens/preview'
 
 const TOTAL = 8
 
-// Step headings for the left column on desktop
 const STEP_HEADINGS: Record<number, { title: string; sub: string }> = {
-  1: { title: 'what do you\nactually want?',          sub: 'be honest with yourself' },
-  2: { title: 'who\nare you?',                         sub: 'just the basics' },
-  3: { title: 'where\nare you?',                       sub: 'sets your matching radius' },
-  4: { title: 'who do you\nwant to meet?',             sub: 'select all that apply' },
-  5: { title: 'a few things\nthat matter',             sub: 'invisible to others' },
-  6: { title: "what's\nactually you?",                 sub: 'tap to add tags' },
-  7: { title: 'write your\nfolio',                     sub: 'write like a person' },
-  8: { title: "here's how\nyou'll appear",             sub: 'edit anytime' },
+  1: { title: 'what do you\nactually want?',      sub: 'be honest with yourself'  },
+  2: { title: 'who\nare you?',                     sub: 'just the basics'          },
+  3: { title: 'where\nare you?',                   sub: 'sets your matching radius' },
+  4: { title: 'who do you\nwant to meet?',         sub: 'select all that apply'    },
+  5: { title: 'a few things\nthat matter',         sub: 'invisible to others'      },
+  6: { title: "what's\nactually you?",             sub: 'tap to add tags'          },
+  7: { title: 'write your\nfolio',                 sub: 'write like a person'      },
+  8: { title: "here's how\nyou'll appear",         sub: 'edit anytime'             },
 }
 
 export default function OnboardingPage() {
   const [step, setStep]     = useState(1)
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState('')
+  const [animKey, setAnimKey] = useState(0)
+  const [animDir, setAnimDir] = useState<'forward' | 'back'>('forward')
+  const prevStep = useRef(step)
 
   const { state } = useOnboarding()
   const router    = useRouter()
@@ -42,11 +44,11 @@ export default function OnboardingPage() {
     1: !!state.intent_type,
     2: !!state.display_name.trim() && !!state.age && parseInt(state.age, 10) >= 18 && state.gender_identity.length > 0,
     3: (() => {
-  const { match_base, connection_pref, location_place_id, college_name, match_radius_miles } = state
-  if (match_base === 'college') return !!college_name
-  if (connection_pref === 'online') return true
-  return !!location_place_id && !!match_radius_miles
-})(),
+      const { match_base, connection_pref, location_place_id, college_name, match_radius_miles } = state
+      if (match_base === 'college') return !!college_name
+      if (connection_pref === 'online') return true
+      return !!location_place_id && !!match_radius_miles
+    })(),
     4: state.gender_preference.length > 0,
     5: true,
     6: true,
@@ -55,7 +57,10 @@ export default function OnboardingPage() {
   }
 
   const navigate = (newStep: number) => {
+    setAnimDir(newStep > prevStep.current ? 'forward' : 'back')
+    prevStep.current = newStep
     setStep(newStep)
+    setAnimKey(k => k + 1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -99,7 +104,7 @@ export default function OnboardingPage() {
         filter_smoking: state.filter_smoking,
         filter_alcohol: state.filter_alcohol,
         filter_religion: state.filter_religion,
-        connection_pref: state.connection_pref,      
+        connection_pref: state.connection_pref,
         location_place_id: state.location_place_id,
         onboarding_complete: true,
       })
@@ -170,6 +175,10 @@ export default function OnboardingPage() {
 
   const heading = STEP_HEADINGS[step]
 
+  const animStyle: React.CSSProperties = {
+    animation: `${animDir === 'forward' ? 'stepInForward' : 'stepInBack'} 0.55s cubic-bezier(0.16,1,0.3,1) both`,
+  }
+
   return (
     <main className="relative min-h-screen" style={{ background: '#1b1328' }}>
       <BackgroundGlow />
@@ -180,41 +189,41 @@ export default function OnboardingPage() {
         <div className="lg:hidden w-full max-w-sm mx-auto px-6 pt-14 pb-32">
           <ProgressBar current={step} total={TOTAL} />
           <ScreenLabel step={step} />
-          {screens[step]}
-          {error && (
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] mt-6 text-center" style={{ color: '#f87171' }}>
-              {error}
-            </p>
-          )}
+          <div key={animKey} style={animStyle}>
+            {screens[step]}
+            {error && (
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] mt-6 text-center" style={{ color: '#f87171' }}>
+                {error}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* ── Desktop layout ── */}
         <div className="hidden lg:flex flex-1 w-full max-w-6xl mx-auto px-12 pt-16 pb-32 gap-16">
 
-          {/* Left column — fixed context */}
+          {/* Left column */}
           <div className="w-80 flex-shrink-0 flex flex-col">
             <ProgressBar current={step} total={TOTAL} />
             <ScreenLabel step={step} />
-
-            {/* Large heroic heading */}
-            <h1
-              className="mt-6 leading-[1.1] whitespace-pre-line"
-              style={{
-                fontFamily: 'EB Garamond, Georgia, serif',
-                fontSize: '52px',
-                color: '#f5efff',
-              }}
-            >
-              {heading.title}
-            </h1>
-            <p
-              className="font-mono mt-4"
-              style={{ fontSize: '11px', color: '#5a4b78', letterSpacing: '0.06em' }}
-            >
-              {heading.sub}
-            </p>
-
-            {/* Step counter at bottom of left col */}
+            <div key={`heading-${animKey}`} style={animStyle}>
+              <h1
+                className="mt-6 leading-[1.1] whitespace-pre-line"
+                style={{
+                  fontFamily: 'EB Garamond, Georgia, serif',
+                  fontSize: '52px',
+                  color: '#f5efff',
+                }}
+              >
+                {heading.title}
+              </h1>
+              <p
+                className="font-mono mt-4"
+                style={{ fontSize: '11px', color: '#5a4b78', letterSpacing: '0.06em' }}
+              >
+                {heading.sub}
+              </p>
+            </div>
             <div className="mt-auto pt-16">
               <p className="font-mono" style={{ fontSize: '10px', color: '#3a2b58', letterSpacing: '0.1em' }}>
                 {String(step).padStart(2, '0')} / {String(TOTAL).padStart(2, '0')}
@@ -225,18 +234,20 @@ export default function OnboardingPage() {
           {/* Divider */}
           <div className="w-[1px] self-stretch" style={{ background: '#2a1f42' }} />
 
-          {/* Right column — interaction */}
+          {/* Right column */}
           <div className="flex-1 min-w-0 overflow-y-auto">
-            {screens[step]}
-            {error && (
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] mt-6" style={{ color: '#f87171' }}>
-                {error}
-              </p>
-            )}
+            <div key={`content-${animKey}`} style={animStyle}>
+              {screens[step]}
+              {error && (
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] mt-6" style={{ color: '#f87171' }}>
+                  {error}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Nav bar — shared across both layouts */}
+        {/* Nav bar */}
         <NavBar
           onBack={goBack}
           onNext={goNext}
