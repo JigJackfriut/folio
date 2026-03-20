@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useOnboarding } from '@/lib/onboarding-store'
 import { Heading, Sub } from '@/components/onboarding/ui'
 
@@ -12,7 +12,7 @@ const RADIUS_OPTIONS = [
   { label: '50 miles',             value: '50'    },
   { label: '100 miles',            value: '100'   },
   { label: 'Anywhere in my state', value: 'state' },
-  { label: 'Anywhere',             value: 'any'   },
+  { label: 'Anywhere',            value: 'any'   },
 ]
 
 const CONNECTION_OPTIONS = [
@@ -20,7 +20,6 @@ const CONNECTION_OPTIONS = [
   { value: 'both',      label: 'In person or online', hint: 'Open to either',     icon: '✦'  },
   { value: 'online',    label: 'Online only',         hint: 'No location needed', icon: '💬' },
 ]
-
 const COLLEGES: { name: string; country: string }[] = [
   // Ivy League
   { name: 'Harvard University',                    country: 'United States' },
@@ -142,11 +141,15 @@ const COLLEGES: { name: string; country: string }[] = [
   { name: 'Rose-Hulman Institute of Technology',   country: 'United States' },
 ]
 
-// ── Appear ────────────────────────────────────────────────────────────────────
+// ── Fade slide wrapper ────────────────────────────────────────────────────────
 
-function Appear({ children }: { children: React.ReactNode }) {
+function Appear({ children, key: _ }: { children: React.ReactNode; key: string }) {
   return (
-    <div style={{ animation: 'fadeSlideIn 0.55s cubic-bezier(0.16,1,0.3,1) both' }}>
+    <div
+      style={{
+        animation: 'fadeSlideIn 0.28s cubic-bezier(0.22,1,0.36,1) both',
+      }}
+    >
       {children}
     </div>
   )
@@ -192,11 +195,24 @@ const dropdownWrap: React.CSSProperties = {
 function CityFlow({ onBack }: { onBack: () => void }) {
   const { state, set } = useOnboarding()
   const [query, setQuery]             = useState(state.location_raw || '')
-  const [suggestions, setSuggestions] = useState<google.maps.places.PlacePrediction[]>([])
+  const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([])
   const [focused, setFocused]         = useState(false)
   const [loading, setLoading]         = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const serviceRef  = useRef<google.maps.places.AutocompleteService | null>(null)
   const isOnline    = state.connection_pref === 'online'
+
+  useEffect(() => {
+    const init = () => {
+      if (window.google?.maps?.places)
+        serviceRef.current = new window.google.maps.places.AutocompleteService()
+    }
+    if (typeof window !== 'undefined') {
+      if (window.google) init()
+      else window.addEventListener('load', init)
+      return () => window.removeEventListener('load', init)
+    }
+  }, [])
 
   const search = (value: string) => {
     setQuery(value)
@@ -204,26 +220,20 @@ function CityFlow({ onBack }: { onBack: () => void }) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (!value.trim() || value.length < 2) { setSuggestions([]); return }
     setLoading(true)
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const { AutocompleteSuggestion } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary
-        const { suggestions: raw } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input: value,
-          types: ['(cities)'],
-        })
-        setSuggestions(raw.map(s => s.placePrediction!).filter(Boolean))
-      } catch {
-        setSuggestions([])
-      } finally {
-        setLoading(false)
-      }
+    debounceRef.current = setTimeout(() => {
+      serviceRef.current?.getPlacePredictions(
+        { input: value, types: ['(cities)'] },
+        (results, status) => {
+          setLoading(false)
+          setSuggestions(status === 'OK' && results ? results.slice(0, 6) : [])
+        }
+      )
     }, 300)
   }
 
-  const select = (p: google.maps.places.PlacePrediction) => {
-    const text = p.text.toString()
-    setQuery(text)
-    set({ location_raw: text, location_place_id: p.placeId })
+  const select = (p: google.maps.places.AutocompletePrediction) => {
+    setQuery(p.description)
+    set({ location_raw: p.description, location_place_id: p.place_id })
     setSuggestions([])
     setFocused(false)
   }
@@ -236,11 +246,8 @@ function CityFlow({ onBack }: { onBack: () => void }) {
   const confirmed = !!state.location_place_id
 
   return (
-    <Appear>
-      <BackChip onClick={() => {
-        set({ location_raw: '', location_place_id: '', connection_pref: 'both', match_radius_miles: '25' as any })
-        onBack()
-      }} />
+    <Appear key="city">
+      <BackChip onClick={onBack} />
 
       {/* Connection preference */}
       <div className="mb-7">
@@ -256,8 +263,8 @@ function CityFlow({ onBack }: { onBack: () => void }) {
                 className="flex items-center gap-4 rounded-xl text-left transition-all"
                 style={{
                   padding: '12px 16px',
-                  border:     `1px solid ${active ? '#9b85e8' : '#3a2b58'}`,
-                  background:  active ? 'rgba(46,31,74,0.85)' : 'rgba(30,21,48,0.4)',
+                  border:    `1px solid ${active ? '#9b85e8' : '#3a2b58'}`,
+                  background: active ? 'rgba(46,31,74,0.85)' : 'rgba(30,21,48,0.4)',
                 }}
               >
                 <span
@@ -297,7 +304,9 @@ function CityFlow({ onBack }: { onBack: () => void }) {
       {/* City search */}
       <div className="mb-7">
         <div className="flex items-center justify-between mb-3">
-          <SectionLabel>{isOnline ? 'your city' : 'your city *'}</SectionLabel>
+          <SectionLabel>
+            {isOnline ? 'your city' : 'your city *'}
+          </SectionLabel>
           {isOnline && (
             <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: '#5a4b78' }}>
               optional
@@ -323,16 +332,13 @@ function CityFlow({ onBack }: { onBack: () => void }) {
             style={{ border: '1px solid #9b85e8', background: 'rgba(155,133,232,0.08)' }}
           >
             <div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.14em] mb-1" style={{ color: '#7a6b9a' }}>
-                confirmed
-              </p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.14em] mb-1" style={{ color: '#7a6b9a' }}>confirmed</p>
               <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '17px', color: '#f0eaff' }}>
                 {state.location_raw}
               </p>
             </div>
             <button
-              type="button"
-              onClick={clearCity}
+              type="button" onClick={clearCity}
               className="font-mono text-[10px] uppercase tracking-widest hover:text-[#f0eaff] transition-colors"
               style={{ color: '#9b85e8' }}
             >
@@ -369,7 +375,7 @@ function CityFlow({ onBack }: { onBack: () => void }) {
               <div style={dropdownWrap}>
                 {suggestions.map((s, i) => (
                   <button
-                    key={s.placeId}
+                    key={s.place_id}
                     type="button"
                     onMouseDown={() => select(s)}
                     className="w-full text-left flex items-center gap-3 transition-all"
@@ -383,10 +389,10 @@ function CityFlow({ onBack }: { onBack: () => void }) {
                     <span style={{ color: '#5a4b78', fontSize: '12px' }}>📍</span>
                     <div>
                       <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#e0d8f5' }}>
-                        {s.mainText?.toString()}
+                        {s.structured_formatting.main_text}
                       </p>
                       <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>
-                        {s.secondaryText?.toString()}
+                        {s.structured_formatting.secondary_text}
                       </p>
                     </div>
                   </button>
@@ -420,9 +426,9 @@ function CityFlow({ onBack }: { onBack: () => void }) {
                   className="rounded-xl text-left transition-all"
                   style={{
                     padding: '11px 14px',
-                    border:     `1px solid ${active ? '#9b85e8' : '#3a2b58'}`,
-                    background:  active ? 'rgba(46,31,74,0.85)' : 'rgba(30,21,48,0.4)',
-                    color:       active ? '#f0eaff' : '#7a6b9a',
+                    border:    `1px solid ${active ? '#9b85e8' : '#3a2b58'}`,
+                    background: active ? 'rgba(46,31,74,0.85)' : 'rgba(30,21,48,0.4)',
+                    color:      active ? '#f0eaff' : '#7a6b9a',
                     fontFamily: 'EB Garamond, Georgia, serif',
                     fontSize:   '15px',
                   }}
@@ -474,11 +480,8 @@ function CollegeFlow({ onBack }: { onBack: () => void }) {
   const confirmed = !!state.college_name
 
   return (
-    <Appear>
-      <BackChip onClick={() => {
-        set({ college_name: '', college_country: '', match_base: 'location' })
-        onBack()
-      }} />
+    <Appear key="college">
+      <BackChip onClick={onBack} />
 
       <SectionLabel>search your college</SectionLabel>
 
@@ -499,8 +502,7 @@ function CollegeFlow({ onBack }: { onBack: () => void }) {
             </p>
           </div>
           <button
-            type="button"
-            onClick={clear}
+            type="button" onClick={clear}
             className="font-mono text-[10px] uppercase tracking-widest hover:text-[#f0eaff] transition-colors"
             style={{ color: '#9b85e8' }}
           >
@@ -595,7 +597,7 @@ export function LocationScreen() {
   if (step === 'college') return <CollegeFlow onBack={goBack} />
 
   return (
-    <Appear>
+    <Appear key="pick">
       <Heading>where are you?</Heading>
       <Sub>this sets how we find people near you</Sub>
 
@@ -605,7 +607,7 @@ export function LocationScreen() {
           onClick={pickCity}
           className="group rounded-2xl text-left transition-all duration-200 hover:border-[#9b85e8]"
           style={{
-            padding: '20px',
+            padding: '20px 20px',
             border: '1px solid #3a2b58',
             background: 'rgba(30,21,48,0.5)',
           }}
@@ -635,4 +637,33 @@ export function LocationScreen() {
           type="button"
           onClick={pickCollege}
           className="group rounded-2xl text-left transition-all duration-200 hover:border-[#9b85e8]"
-          style=
+          style={{
+            padding: '20px 20px',
+            border: '1px solid #3a2b58',
+            background: 'rgba(30,21,48,0.5)',
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <span
+              className="flex items-center justify-center rounded-full flex-shrink-0 text-xl"
+              style={{ width: '48px', height: '48px', background: 'rgba(58,43,88,0.6)' }}
+            >
+              🎓
+            </span>
+            <div>
+              <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '20px', color: '#f0eaff' }}>
+                I'm at college
+              </p>
+              <p className="font-mono text-[11px] mt-1" style={{ color: '#5a4b78' }}>
+                Use your campus as your anchor
+              </p>
+            </div>
+            <span className="ml-auto font-mono text-[#3a2b58] group-hover:text-[#9b85e8] transition-colors text-lg">
+              →
+            </span>
+          </div>
+        </button>
+      </div>
+    </Appear>
+  )
+}
