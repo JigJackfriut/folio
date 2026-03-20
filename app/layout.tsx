@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { EB_Garamond, Space_Mono } from 'next/font/google'
 import './globals.css'
 
@@ -25,6 +26,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${garamond.variable} ${spaceMono.variable} antialiased`}>
         {children}
+
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&libraries=places`}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
