@@ -41,7 +41,13 @@ export default function OnboardingPage() {
   const canNext: Record<number, boolean> = {
     1: !!state.intent_type,
     2: !!state.display_name.trim() && !!state.age && parseInt(state.age, 10) >= 18 && state.gender_identity.length > 0,
-    3: state.match_base === 'location' ? !!state.location_raw.trim() : !!state.college_name.trim(),
+    3: (() => {
+  const { connection_pref, location_place_id, college_name, match_radius_miles } = state
+  if (connection_pref === 'online') return true
+  const hasLocation = !!(location_place_id || college_name)
+  const hasRadius = !!match_radius_miles
+  return hasLocation && hasRadius
+})(),
     4: state.gender_preference.length > 0,
     5: true,
     6: true,
