@@ -1,76 +1,143 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useOnboarding } from '@/lib/onboarding-store'
-import { Heading, Sub, EditorialInput, Toggle } from '@/components/onboarding/ui'
+import { Heading, Sub } from '@/components/onboarding/ui'
+
+type LocationMode = 'city' | 'college'
 
 const RADIUS_OPTIONS = [
-  { label: '5 mi',   value: 5   },
-  { label: '10 mi',  value: 10  },
-  { label: '25 mi',  value: 25  },
-  { label: '50 mi',  value: 50  },
-  { label: '100 mi', value: 100 },
+  { label: '10 miles',             value: '10'    },
+  { label: '25 miles',             value: '25'    },
+  { label: '50 miles',             value: '50'    },
+  { label: '100 miles',            value: '100'   },
+  { label: 'Anywhere in my state', value: 'state' },
+  { label: 'Anywhere',             value: 'any'   },
 ]
 
-function CollegeSearch() {
-  const { state, set } = useOnboarding()
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<{ name: string; country: string; web_pages: string[] }[]>([])
-  const [loading, setLoading] = useState(false)
-  const [focused, setFocused] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+const CONNECTION_OPTIONS = [
+  { value: 'in-person', label: 'In person only',      icon: '🤝', hint: 'Meet locally'              },
+  { value: 'both',      label: 'In person or online', icon: '✦',  hint: 'Open to either'            },
+  { value: 'online',    label: 'Online only',         icon: '💬', hint: 'No location needed'        },
+]
 
-  const search = (q: string) => {
-    setQuery(q)
+// ── Shared styles ──────────────────────────────────────────────────────────────
+
+const searchBox = (focused: boolean): React.CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  borderRadius: '14px',
+  padding: '13px 16px',
+  border: `1px solid ${focused ? '#9b85e8' : '#3a2b58'}`,
+  background: 'rgba(30,21,48,0.6)',
+  transition: 'border-color 0.15s',
+})
+
+const dropdownWrap: React.CSSProperties = {
+  position: 'absolute',
+  left: 0, right: 0,
+  marginTop: '6px',
+  borderRadius: '14px',
+  overflow: 'hidden',
+  zIndex: 30,
+  border: '1px solid #3a2b58',
+  background: '#1a1230',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+}
+
+const confirmedBox: React.CSSProperties = {
+  borderRadius: '14px',
+  padding: '14px 16px',
+  border: '1px solid #9b85e8',
+  background: 'rgba(155,133,232,0.08)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="font-mono text-[10px] uppercase tracking-[0.14em] mb-3" style={{ color: '#7a6b9a' }}>
+      {children}
+    </p>
+  )
+}
+
+function Spinner() {
+  return (
+    <div className="w-3.5 h-3.5 rounded-full border-2 border-[#9b85e8] border-t-transparent animate-spin flex-shrink-0" />
+  )
+}
+
+// ── CitySearch ─────────────────────────────────────────────────────────────────
+
+function CitySearch({ optional }: { optional?: boolean }) {
+  const { state, set } = useOnboarding()
+  const [query, setQuery]             = useState(state.location_raw || '')
+  const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([])
+  const [focused, setFocused]         = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const serviceRef  = useRef<google.maps.places.AutocompleteService | null>(null)
+
+  useEffect(() => {
+    const init = () => {
+      if (window.google?.maps?.places)
+        serviceRef.current = new window.google.maps.places.AutocompleteService()
+    }
+    if (typeof window !== 'undefined') {
+      if (window.google) init()
+      else window.addEventListener('load', init)
+      return () => window.removeEventListener('load', init)
+    }
+  }, [])
+
+  const search = (value: string) => {
+    setQuery(value)
+    set({ location_raw: value, location_place_id: '' })
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (!q.trim()) { setResults([]); return }
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true)
-      try {
-        const res = await fetch(`https://universities.hipolabs.com/search?name=${encodeURIComponent(q)}&limit=8`)
-        const data = await res.json()
-        setResults(data.slice(0, 8))
-      } catch {
-        setResults([])
-      } finally {
-        setLoading(false)
-      }
-    }, 350)
+    if (!value.trim() || value.length < 2) { setSuggestions([]); return }
+    setLoading(true)
+    debounceRef.current = setTimeout(() => {
+      serviceRef.current?.getPlacePredictions(
+        { input: value, types: ['(cities)'] },
+        (results, status) => {
+          setLoading(false)
+          setSuggestions(status === 'OK' && results ? results.slice(0, 6) : [])
+        }
+      )
+    }, 300)
   }
 
-  const select = (college: { name: string; country: string; web_pages: string[] }) => {
-    set({ college_name: college.name, college_country: college.country, college_url: college.web_pages?.[0] ?? '' })
-    setQuery(college.name)
-    setResults([])
+  const select = (p: google.maps.places.AutocompletePrediction) => {
+    setQuery(p.description)
+    set({ location_raw: p.description, location_place_id: p.place_id })
+    setSuggestions([])
     setFocused(false)
   }
 
   const clear = () => {
-    set({ college_name: '', college_country: '', college_url: '' })
+    set({ location_raw: '', location_place_id: '' })
     setQuery('')
-    setResults([])
+    setSuggestions([])
   }
 
-  if (state.college_name && !focused) {
+  if (state.location_place_id && !focused) {
     return (
-      <div
-        className="rounded-2xl p-4 flex items-center justify-between mb-2"
-        style={{ border: '1px solid #9b85e8', background: 'rgba(155,133,232,0.1)' }}
-      >
+      <div style={confirmedBox}>
         <div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.12em] mb-0.5" style={{ color: '#7a6b9a' }}>
-            matched around
+          <p className="font-mono text-[9px] uppercase tracking-[0.14em] mb-1" style={{ color: '#7a6b9a' }}>
+            your city
           </p>
-          <p style={{ fontSize: '16px', color: '#f0eaff', fontFamily: 'EB Garamond, Georgia, serif' }}>
-            {state.college_name}
+          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '18px', color: '#f0eaff' }}>
+            {state.location_raw}
           </p>
-          <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>{state.college_country}</p>
         </div>
         <button
-          type="button"
-          onClick={clear}
-          className="font-mono text-[10px] uppercase tracking-widest"
-          style={{ color: '#5a4b78' }}
+          type="button" onClick={clear}
+          className="font-mono text-[10px] uppercase tracking-widest hover:text-[#f0eaff] transition-colors"
+          style={{ color: '#9b85e8' }}
         >
           change
         </button>
@@ -79,155 +146,356 @@ function CollegeSearch() {
   }
 
   return (
-    <div className="relative mb-2">
-      <div
-        className="flex items-center gap-2 rounded-xl px-4 py-3 transition-colors"
-        style={{ border: `1px solid ${focused ? '#9b85e8' : '#3a2b58'}`, background: 'rgba(30,21,48,0.6)' }}
-      >
-        <span style={{ color: '#4a3b68', fontSize: '14px', flexShrink: 0 }}>⌕</span>
+    <div className="relative">
+      <div style={searchBox(focused)}>
+        <span style={{ color: '#4a3b68', fontSize: '17px', flexShrink: 0 }}>◎</span>
         <input
           type="text"
           value={query}
           onChange={e => search(e.target.value)}
           onFocus={() => setFocused(true)}
-          onBlur={() => setTimeout(() => setFocused(false), 200)}
-          placeholder="Search for your college or university..."
-          className="flex-1 bg-transparent outline-none"
-          style={{ fontSize: '14px', color: '#f5efff' }}
+          onBlur={() => setTimeout(() => setFocused(false), 180)}
+          placeholder={optional ? 'Columbus, OH (optional)' : 'Columbus, OH'}
           autoComplete="off"
+          className="flex-1 bg-transparent outline-none"
+          style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '17px', color: '#f5efff' }}
         />
-        {loading && <span className="font-mono text-[10px]" style={{ color: '#4a3b68' }}>…</span>}
+        {loading && <Spinner />}
       </div>
 
-      {results.length > 0 && focused && (
-        <div
-          className="absolute left-0 right-0 rounded-xl overflow-hidden z-20 mt-1"
-          style={{ border: '1px solid #3a2b58', background: '#1a1230' }}
-        >
-          {results.map((r, i) => (
+      {focused && suggestions.length > 0 && (
+        <div style={dropdownWrap}>
+          {suggestions.map((s, i) => (
             <button
-              key={r.web_pages?.[0] ?? i}
+              key={s.place_id}
               type="button"
-              onMouseDown={() => select(r)}
-              className="w-full text-left flex items-start gap-3 transition-all"
-              style={{ padding: '11px 16px', borderBottom: i < results.length - 1 ? '1px solid #2a1f42' : undefined }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(58,43,88,0.4)' }}
+              onMouseDown={() => select(s)}
+              className="w-full text-left flex items-center gap-3 transition-all"
+              style={{
+                padding: '12px 16px',
+                borderBottom: i < suggestions.length - 1 ? '1px solid #231840' : undefined,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(58,43,88,0.45)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
-              <span style={{ color: '#5a4b78', fontSize: '12px', marginTop: '2px', flexShrink: 0 }}>◎</span>
+              <span style={{ color: '#5a4b78', fontSize: '12px', flexShrink: 0 }}>📍</span>
               <div>
-                <p style={{ fontSize: '13px', color: '#d4c8f0' }}>{r.name}</p>
-                <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>{r.country}</p>
+                <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#e0d8f5' }}>
+                  {s.structured_formatting.main_text}
+                </p>
+                <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>
+                  {s.structured_formatting.secondary_text}
+                </p>
               </div>
             </button>
           ))}
         </div>
       )}
 
-      {query.length > 2 && results.length === 0 && !loading && focused && (
-        <div
-          className="absolute left-0 right-0 rounded-xl mt-1 px-4 py-3"
-          style={{ border: '1px solid #2a1f42', background: '#1a1230' }}
-        >
-          <p className="font-mono text-[11px]" style={{ color: '#4a3b68' }}>No results for &ldquo;{query}&rdquo;</p>
+      {focused && query.length > 2 && suggestions.length === 0 && !loading && (
+        <div style={{ ...dropdownWrap, padding: '14px 16px' }}>
+          <p className="font-mono text-[11px]" style={{ color: '#5a4b78' }}>
+            No cities found — try a different spelling
+          </p>
         </div>
       )}
     </div>
   )
 }
 
+// ── CollegeSearch ──────────────────────────────────────────────────────────────
+
+type College = { name: string; country: string; web_pages: string[] }
+
+function CollegeSearch({ optional }: { optional?: boolean }) {
+  const { state, set } = useOnboarding()
+  const [query, setQuery]     = useState(state.college_name || '')
+  const [results, setResults] = useState<College[]>([])
+  const [focused, setFocused] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const search = (value: string) => {
+    setQuery(value)
+    set({ college_name: '', college_country: '' })
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!value.trim() || value.length < 2) { setResults([]); return }
+    setLoading(true)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res  = await fetch(`https://universities.hipolabs.com/search?name=${encodeURIComponent(value)}&limit=8`)
+        const data: College[] = await res.json()
+        setResults(data.slice(0, 8))
+      } catch { setResults([]) }
+      finally  { setLoading(false) }
+    }, 350)
+  }
+
+  const select = (c: College) => {
+    setQuery(c.name)
+    set({ college_name: c.name, college_country: c.country })
+    setResults([])
+    setFocused(false)
+  }
+
+  const clear = () => {
+    set({ college_name: '', college_country: '' })
+    setQuery('')
+    setResults([])
+  }
+
+  if (state.college_name && !focused) {
+    return (
+      <div style={confirmedBox}>
+        <div>
+          <p className="font-mono text-[9px] uppercase tracking-[0.14em] mb-1" style={{ color: '#7a6b9a' }}>
+            your college
+          </p>
+          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '18px', color: '#f0eaff' }}>
+            {state.college_name}
+          </p>
+          <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>
+            {state.college_country}
+          </p>
+        </div>
+        <button
+          type="button" onClick={clear}
+          className="font-mono text-[10px] uppercase tracking-widest hover:text-[#f0eaff] transition-colors"
+          style={{ color: '#9b85e8' }}
+        >
+          change
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative">
+      <div style={searchBox(focused)}>
+        <span style={{ color: '#4a3b68', fontSize: '17px', flexShrink: 0 }}>🎓</span>
+        <input
+          type="text"
+          value={query}
+          onChange={e => search(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 180)}
+          placeholder={optional ? 'Search your college (optional)' : 'Search your college or university...'}
+          autoComplete="off"
+          className="flex-1 bg-transparent outline-none"
+          style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '17px', color: '#f5efff' }}
+        />
+        {loading && <Spinner />}
+      </div>
+
+      {focused && results.length > 0 && (
+        <div style={dropdownWrap}>
+          {results.map((r, i) => (
+            <button
+              key={r.web_pages?.[0] ?? i}
+              type="button"
+              onMouseDown={() => select(r)}
+              className="w-full text-left flex items-center gap-3 transition-all"
+              style={{
+                padding: '12px 16px',
+                borderBottom: i < results.length - 1 ? '1px solid #231840' : undefined,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(58,43,88,0.45)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <span style={{ color: '#5a4b78', fontSize: '12px', flexShrink: 0 }}>◎</span>
+              <div>
+                <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#e0d8f5' }}>
+                  {r.name}
+                </p>
+                <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>
+                  {r.country}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {focused && query.length > 2 && results.length === 0 && !loading && (
+        <div style={{ ...dropdownWrap, padding: '14px 16px' }}>
+          <p className="font-mono text-[11px]" style={{ color: '#5a4b78' }}>
+            No results — try a shorter name
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── LocationScreen ─────────────────────────────────────────────────────────────
+
 export function LocationScreen() {
   const { state, set } = useOnboarding()
+  const [mode, setMode] = useState<LocationMode>(state.college_name ? 'college' : 'city')
+
+  const isOnline    = state.connection_pref === 'online'
+  const needsLocation = !isOnline
+  const hasLocation = !!(state.location_place_id || state.college_name)
 
   return (
     <>
       <Heading>where are you?</Heading>
       <Sub>sets your matching radius — never shown publicly unless you choose</Sub>
 
-      <div className="grid grid-cols-2 gap-2 mb-6">
-        {(['location', 'college'] as const).map(base => (
-          <button
-            key={base}
-            type="button"
-            onClick={() => set({ match_base: base })}
-            className="rounded-2xl flex flex-col items-start transition-all duration-150"
-            style={{
-              padding: '14px 16px',
-              border: `1px solid ${state.match_base === base ? '#9b85e8' : '#3a2b58'}`,
-              background: state.match_base === base ? 'rgba(46,31,74,0.8)' : 'rgba(30,21,48,0.4)',
-            }}
-          >
-            <span style={{ fontSize: '18px', marginBottom: '6px' }}>
-              {base === 'location' ? '📍' : '🎓'}
-            </span>
-            <p className="font-medium text-[13px] mb-0.5" style={{ color: state.match_base === base ? '#f0eaff' : '#a99abb' }}>
-              {base === 'location' ? 'My location' : 'My college'}
-            </p>
-            <p className="text-[11px]" style={{ color: '#7a6b9a' }}>
-              {base === 'location' ? 'City or neighbourhood' : 'Campus as my anchor'}
-            </p>
-          </button>
-        ))}
+      {/* ── 1. Connection preference ── */}
+      <div className="mb-7">
+        <SectionLabel>connection preference</SectionLabel>
+        <div className="flex flex-col gap-2">
+          {CONNECTION_OPTIONS.map(opt => {
+            const active = state.connection_pref === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => set({ connection_pref: opt.value as any })}
+                className="flex items-center gap-4 rounded-xl text-left transition-all"
+                style={{
+                  padding: '13px 16px',
+                  border:     `1px solid ${active ? '#9b85e8' : '#3a2b58'}`,
+                  background:  active ? 'rgba(46,31,74,0.85)' : 'rgba(30,21,48,0.4)',
+                }}
+              >
+                <span
+                  className="flex items-center justify-center rounded-full flex-shrink-0"
+                  style={{
+                    width: '34px', height: '34px',
+                    background: active ? 'rgba(155,133,232,0.2)' : 'rgba(58,43,88,0.4)',
+                    fontSize: '15px',
+                  }}
+                >
+                  {opt.icon}
+                </span>
+                <div className="flex-1">
+                  <p style={{
+                    fontFamily: 'EB Garamond, Georgia, serif',
+                    fontSize: '16px',
+                    color: active ? '#f0eaff' : '#a99abb',
+                  }}>
+                    {opt.label}
+                  </p>
+                  <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>
+                    {opt.hint}
+                  </p>
+                </div>
+                <div
+                  className="flex-shrink-0 rounded-full flex items-center justify-center"
+                  style={{
+                    width: '16px', height: '16px',
+                    border: `1.5px solid ${active ? '#9b85e8' : '#3a2b58'}`,
+                    background: active ? '#9b85e8' : 'transparent',
+                  }}
+                >
+                  {active && <span style={{ color: '#fff', fontSize: '9px' }}>✓</span>}
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {state.match_base === 'location' ? (
-        <EditorialInput
-          label="I'm based in..."
-          placeholder="City or neighbourhood"
-          value={state.location_raw}
-          onChange={e => set({ location_raw: e.target.value })}
-          hint="e.g. Brooklyn, NY · Melbourne · East London"
-        />
-      ) : (
-        <div className="mb-6">
-          <p
-            className="font-serif italic mb-3"
-            style={{ fontSize: '15px', color: '#7a6b9a', fontFamily: 'EB Garamond, Georgia, serif' }}
-          >
-            My college is...
-          </p>
-          <CollegeSearch />
+      {/* ── 2. Location ── */}
+      <div className="mb-7">
+        <div className="flex items-center justify-between mb-3">
+          <SectionLabel>
+            {isOnline ? 'your location' : 'your location *'}
+          </SectionLabel>
+          {isOnline && (
+            <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: '#5a4b78' }}>
+              optional
+            </span>
+          )}
         </div>
-      )}
 
-      <div className="mb-6">
-        <p className="font-mono text-[10px] uppercase tracking-[0.1em] mb-3" style={{ color: '#7a6b9a' }}>
-          match within
-        </p>
-        <div className="flex gap-2 flex-wrap">
-          {RADIUS_OPTIONS.map(opt => (
+        {/* Online-only note */}
+        {isOnline && (
+          <div
+            className="rounded-xl px-4 py-3 mb-4 flex items-center gap-3"
+            style={{ background: 'rgba(109,75,195,0.12)', border: '1px solid #4a3b6844' }}
+          >
+            <span style={{ fontSize: '14px' }}>💬</span>
+            <p className="font-mono text-[10px] leading-relaxed" style={{ color: '#9b85e8' }}>
+              Location is optional for online-only connections.
+              Adding one helps if you ever want to meet.
+            </p>
+          </div>
+        )}
+
+        {/* City / college toggle */}
+        <div
+          className="flex rounded-xl p-1 mb-4"
+          style={{ background: 'rgba(30,21,48,0.6)', border: '1px solid #3a2b58' }}
+        >
+          {([
+            { value: 'city',    label: '📍  My city'    },
+            { value: 'college', label: '🎓  My college' },
+          ] as { value: LocationMode; label: string }[]).map(opt => (
             <button
               key={opt.value}
               type="button"
-              onClick={() => set({ match_radius_miles: opt.value })}
-              className="rounded-full border font-mono text-[11px] transition-all"
+              onClick={() => setMode(opt.value)}
+              className="flex-1 rounded-lg py-2.5 font-mono text-xs transition-all"
               style={{
-                padding: '6px 14px',
-                borderColor: state.match_radius_miles === opt.value ? '#9b85e8' : '#3a2b58',
-                background: state.match_radius_miles === opt.value ? 'rgba(46,31,74,0.8)' : 'transparent',
-                color: state.match_radius_miles === opt.value ? '#f0eaff' : '#7a6b9a',
+                background:    mode === opt.value ? 'rgba(109,75,195,0.6)' : 'transparent',
+                color:         mode === opt.value ? '#f0eaff' : '#7a6b9a',
+                fontWeight:    mode === opt.value ? 700 : 400,
+                letterSpacing: '0.08em',
               }}
             >
               {opt.label}
             </button>
           ))}
         </div>
+
+        {mode === 'city'
+          ? <CitySearch optional={isOnline} />
+          : <CollegeSearch optional={isOnline} />
+        }
       </div>
 
-      <div style={{ borderTop: '1px solid #2a1f42' }}>
-        <Toggle
-          label="Also show people outside my radius"
-          hint="Softer limit — still shows closer people first"
-          checked={state.open_to_distance}
-          onChange={v => set({ open_to_distance: v })}
-        />
-        <Toggle
-          label="Show neighbourhood only"
-          hint="Hides your exact city from your public profile"
-          checked={state.hide_exact_location}
-          onChange={v => set({ hide_exact_location: v })}
-        />
-      </div>
+      {/* ── 3. Match distance — hidden for online-only ── */}
+      {!isOnline && (
+        <div className="mb-2">
+          <SectionLabel>match distance *</SectionLabel>
+          <div className="grid grid-cols-2 gap-2">
+            {RADIUS_OPTIONS.map(opt => {
+              const active = state.match_radius_miles === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => set({ match_radius_miles: opt.value as any })}
+                  className="rounded-xl text-left transition-all"
+                  style={{
+                    padding: '11px 14px',
+                    border:     `1px solid ${active ? '#9b85e8' : '#3a2b58'}`,
+                    background:  active ? 'rgba(46,31,74,0.85)' : 'rgba(30,21,48,0.4)',
+                    color:       active ? '#f0eaff' : '#7a6b9a',
+                    fontFamily: 'EB Garamond, Georgia, serif',
+                    fontSize:   '15px',
+                  }}
+                >
+                  {opt.label}
+                  {active && (
+                    <span className="font-mono text-[9px] ml-2" style={{ color: '#9b85e8' }}>✓</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Required fields note */}
+      {needsLocation && (
+        <p className="font-mono text-[9px] mt-4" style={{ color: '#4a3b68' }}>
+          * required for in-person matching
+        </p>
+      )}
     </>
   )
 }
