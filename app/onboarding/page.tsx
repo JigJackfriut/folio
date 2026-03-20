@@ -100,6 +100,8 @@ export default function OnboardingPage() {
         filter_smoking: state.filter_smoking,
         filter_alcohol: state.filter_alcohol,
         filter_religion: state.filter_religion,
+        connection_pref: state.connection_pref,      
+        location_place_id: state.location_place_id,
         onboarding_complete: true,
       })
       if (profileErr) throw profileErr
