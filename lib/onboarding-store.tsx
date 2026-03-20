@@ -1,5 +1,4 @@
 'use client'
-
 import { createContext, useContext, useReducer, ReactNode } from 'react'
 import type { TagEntry } from '@/lib/tags'
 
@@ -17,14 +16,17 @@ export interface OnboardingState {
   age: string
   gender_identity: string[]
   // S3 — flexible matching base
-  match_base: 'location' | 'college'   // which anchor to use for proximity matching
-  location_raw: string                  // city/neighbourhood text (if match_base = 'location')
-  college_name: string                  // selected college name (if match_base = 'college')
-  college_country: string               // college country
-  college_url: string                   // college web_pages[0] for deduplication
-  match_radius_miles: number            // proximity radius (5 | 10 | 25 | 50 | 100)
-  hide_exact_location: boolean          // show neighbourhood only
-  open_to_distance: boolean             // also show people outside radius
+  match_base: 'location' | 'college'
+  location_raw: string
+  location_place_id: string                                    // 👈 added
+  college_name: string
+  college_country: string
+  college_url: string
+  match_radius_miles: number
+  hide_exact_location: boolean
+  open_to_distance: boolean
+  open_to_online: boolean                                      // 👈 added
+  connection_pref: 'in-person' | 'both' | 'online'            // 👈 added
   // S4
   gender_preference: string[]
   age_min: number
@@ -49,12 +51,15 @@ const initial: OnboardingState = {
   gender_identity: [],
   match_base: 'location',
   location_raw: '',
+  location_place_id: '',                                       // 👈 added
   college_name: '',
   college_country: '',
   college_url: '',
   match_radius_miles: 25,
   hide_exact_location: true,
   open_to_distance: false,
+  open_to_online: false,                                       // 👈 added
+  connection_pref: 'both',                                     // 👈 added
   gender_preference: [],
   age_min: 22,
   age_max: 36,
