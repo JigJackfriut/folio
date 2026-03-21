@@ -14,18 +14,20 @@ import { FiltersScreen }     from '@/components/onboarding/screens/filters'
 import { TagsScreen }        from '@/components/onboarding/screens/tags'
 import { PostScreen }        from '@/components/onboarding/screens/post'
 import { PreviewScreen }     from '@/components/onboarding/screens/preview'
+import { TagExplainerScreen } from '@/components/onboarding/screens/tag-explainer'
 
-const TOTAL = 8
+const TOTAL = 9
 
 const STEP_HEADINGS: Record<number, { title: string; sub: string }> = {
-  1: { title: 'what do you\nactually want?',      sub: 'be honest with yourself'  },
-  2: { title: 'who\nare you?',                     sub: 'just the basics'          },
-  3: { title: 'where\nare you?',                   sub: 'sets your matching radius' },
-  4: { title: 'who do you\nwant to meet?',         sub: 'select all that apply'    },
-  5: { title: 'a few things\nthat matter',         sub: 'invisible to others'      },
-  6: { title: "what's\nactually you?",             sub: 'tap to add tags'          },
-  7: { title: 'write your\nfolio',                 sub: 'write like a person'      },
-  8: { title: "here's how\nyou'll appear",         sub: 'edit anytime'             },
+  1: { title: 'what do you\nactually want?',      sub: 'be honest with yourself'   },
+  2: { title: 'who\nare you?',                     sub: 'just the basics'           },
+  3: { title: 'where\nare you?',                   sub: 'sets your matching radius'  },
+  4: { title: 'who do you\nwant to meet?',         sub: 'select all that apply'     },
+  5: { title: 'a few things\nthat matter',         sub: 'invisible to others'       },
+  6: { title: 'how tags\nwork',                    sub: 'read this once'            },
+  7: { title: "what's\nactually you?",             sub: 'tap to add tags'           },
+  8: { title: 'write your\nfolio',                 sub: 'write like a person'       },
+  9: { title: "here's how\nyou'll appear",         sub: 'edit anytime'              },
 }
 
 export default function OnboardingPage() {
@@ -41,20 +43,21 @@ export default function OnboardingPage() {
   const supabase  = createClient()
 
   const canNext: Record<number, boolean> = {
-    1: !!state.intent_type,
-    2: !!state.display_name.trim() && !!state.age && parseInt(state.age, 10) >= 18 && state.gender_identity.length > 0,
-    3: (() => {
-      const { match_base, connection_pref, location_place_id, college_name, match_radius_miles } = state
-      if (match_base === 'college') return !!college_name
-      if (connection_pref === 'online') return true
-      return !!location_place_id && !!match_radius_miles
-    })(),
-    4: state.gender_preference.length > 0,
-    5: true,
-    6: true,
-    7: !!state.post_headline.trim() && state.post_headline.trim().length <= 120 && state.post_body.trim().length <= 2000,
-    8: true,
-  }
+  1: !!state.intent_type,
+  2: !!state.display_name.trim() && !!state.age && parseInt(state.age, 10) >= 18 && state.gender_identity.length > 0,
+  3: (() => {
+    const { match_base, connection_pref, location_place_id, college_name, match_radius_miles } = state
+    if (match_base === 'college') return !!college_name
+    if (connection_pref === 'online') return true
+    return !!location_place_id && !!match_radius_miles
+  })(),
+  4: state.gender_preference.length > 0,
+  5: true,
+  6: true, // explainer — always can continue
+  7: true,
+  8: !!state.post_headline.trim() && state.post_headline.trim().length <= 120 && state.post_body.trim().length <= 2000,
+  9: true,
+}
 
   const navigate = (newStep: number) => {
     setAnimDir(newStep > prevStep.current ? 'forward' : 'back')
@@ -162,16 +165,17 @@ export default function OnboardingPage() {
     }
   }
 
-  const screens: Record<number, React.ReactNode> = {
-    1: <IntentScreen onNext={goNext} />,
-    2: <BasicsScreen />,
-    3: <LocationScreen />,
-    4: <PreferencesScreen />,
-    5: <FiltersScreen />,
-    6: <TagsScreen />,
-    7: <PostScreen />,
-    8: <PreviewScreen />,
-  }
+const screens: Record<number, React.ReactNode> = {
+  1: <IntentScreen onNext={goNext} />,
+  2: <BasicsScreen />,
+  3: <LocationScreen />,
+  4: <PreferencesScreen />,
+  5: <FiltersScreen />,
+  6: <TagExplainerScreen />,
+  7: <TagsScreen />,
+  8: <PostScreen />,
+  9: <PreviewScreen />,
+}
 
   const heading = STEP_HEADINGS[step]
 
@@ -253,9 +257,9 @@ export default function OnboardingPage() {
           onNext={goNext}
           onSkip={goSkip}
           backVisible={step > 1}
-          skipVisible={step === 5 || step === 6}
+          skipVisible={step === 5 || step === 7}
           nextDisabled={!canNext[step] || saving}
-          nextLabel={saving ? 'saving...' : step === TOTAL ? 'publish my folio' : 'continue'}
+          nextLabel={saving ? 'saving...' : step === TOTAL ? 'publish my folio' : step === 6 ? 'got it →' : 'continue'}
         />
       </div>
     </main>
