@@ -198,36 +198,42 @@ function CityFlow({ onBack }: { onBack: () => void }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isOnline    = state.connection_pref === 'online'
 
-  const search = (value: string) => {
-    setQuery(value)
-    set({ location_raw: value, location_place_id: '' })
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (!value.trim() || value.length < 2) { setSuggestions([]); return }
-    setLoading(true)
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const { AutocompleteSuggestion } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary
-        const { suggestions: raw } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input: value,
-          types: ['(cities)'],
-        })
-        setSuggestions(raw.map(s => s.placePrediction!).filter(Boolean))
-      } catch {
-        setSuggestions([])
-      } finally {
-        setLoading(false)
-      }
-    }, 300)
-  }
+const search = (value: string) => {
+  setQuery(value)
+  set({ location_raw: value, location_place_id: '' })
+  if (debounceRef.current) clearTimeout(debounceRef.current)
+  if (!value.trim() || value.length < 2) { setSuggestions([]); return }
+  setLoading(true)
+  debounceRef.current = setTimeout(async () => {
+    try {
+      await google.maps.importLibrary('places')
+      const sessionToken = new google.maps.places.AutocompleteSessionToken()
+      const service = new google.maps.places.AutocompleteService()
+      service.getPlacePredictions(
+        { input: value, types: ['(cities)'], sessionToken },
+        (results, status) => {
+          setLoading(false)
+          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+            setSuggestions(results.slice(0, 6))
+          } else {
+            setSuggestions([])
+          }
+        }
+      )
+    } catch {
+      setSuggestions([])
+      setLoading(false)
+    }
+  }, 300)
+}
 
-  const select = (p: google.maps.places.PlacePrediction) => {
-    const text = p.text.toString()
-    setQuery(text)
-    set({ location_raw: text, location_place_id: p.placeId })
-    setSuggestions([])
-    setFocused(false)
-  }
-
+  
+const select = (p: google.maps.places.AutocompletePrediction) => {
+  setQuery(p.description)
+  set({ location_raw: p.description, location_place_id: p.place_id })
+  setSuggestions([])
+  setFocused(false)
+}
   const clearCity = () => {
     set({ location_raw: '', location_place_id: '' })
     setQuery('')
