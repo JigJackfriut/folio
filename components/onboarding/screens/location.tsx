@@ -374,31 +374,29 @@ const select = (p: google.maps.places.AutocompletePrediction) => {
             {focused && suggestions.length > 0 && (
               <div style={dropdownWrap}>
                 {suggestions.map((s, i) => (
-                  <button
-                    key={s.placeId}
-                    type="button"
-                    onMouseDown={() => select(s)}
-                    className="w-full text-left flex items-center gap-3 transition-all"
-                    style={{
-                      padding: '12px 16px',
-                      borderBottom: i < suggestions.length - 1 ? '1px solid #231840' : undefined,
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(58,43,88,0.45)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <span style={{ color: '#5a4b78', fontSize: '12px' }}>📍</span>
-                    <div>
-                      <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#e0d8f5' }}>
-                        {s.mainText?.toString()}
-                      </p>
-                      <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>
-                        {s.secondaryText?.toString()}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+  <button
+    key={s.place_id}
+    type="button"
+    onMouseDown={() => select(s)}
+    className="w-full text-left flex items-center gap-3 transition-all"
+    style={{
+      padding: '12px 16px',
+      borderBottom: i < suggestions.length - 1 ? '1px solid #231840' : undefined,
+    }}
+    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(58,43,88,0.45)' }}
+    onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+  >
+    <span style={{ color: '#5a4b78', fontSize: '12px' }}>📍</span>
+    <div>
+      <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#e0d8f5' }}>
+        {s.structured_formatting.main_text}
+      </p>
+      <p className="font-mono text-[10px] mt-0.5" style={{ color: '#5a4b78' }}>
+        {s.structured_formatting.secondary_text}
+      </p>
+    </div>
+  </button>
+))}
 
             {focused && query.length > 2 && suggestions.length === 0 && !loading && (
               <div style={{ ...dropdownWrap, padding: '14px 16px' }}>
