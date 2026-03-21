@@ -408,7 +408,7 @@ const select = (p: google.maps.places.AutocompletePrediction) => {
           </div>
         )}
       </div>
-
+ </div>
       {/* Match distance — hidden for online only */}
       {!isOnline && (
         <div>
