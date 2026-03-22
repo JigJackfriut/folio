@@ -1,4 +1,4 @@
-export type TagTier = 'public' | 'shared' | 'filter'
+export type TagTier = 'public' | 'echo'
 
 export interface TagEntry {
   name: string
@@ -8,7 +8,7 @@ export interface TagEntry {
 export const TAG_CATEGORIES: Record<string, Record<string, string[]>> = {
   popular: {
     'trending now': [
-      'Bookworm', 'In therapy', 'Gamer', 'Cinephile', 'Neurodivergent',
+      'Hookup', 'Bookworm', 'In therapy', 'Gamer', 'Cinephile', 'Neurodivergent',
       'Music nerd', 'Homebody', 'Dog parent', 'Cat parent', '420 friendly', 'BDSM',
       'Overthinker', 'Traveler', 'Fitness', 'Cottagecore', 'Dark academia',
       'Dry humor', 'Introvert', 'Foodie', 'True crime', 'LGBTQ+',
@@ -82,6 +82,7 @@ export const TAG_CATEGORIES: Record<string, Record<string, string[]>> = {
     ],
     'relationship style': [
       'Monogamous', 'Polyamorous', 'ENM', 'Relationship anarchy', 'Solo poly',
+      'Hookup', 'Friends with benefits', 'Casual',
     ],
     'attachment & growth': [
       'Anxious attachment', 'Avoidant attachment', 'Secure attachment',
@@ -121,7 +122,7 @@ export const TAG_CATEGORIES: Record<string, Record<string, string[]>> = {
 }
 
 export const POPULAR_TAGS = new Set([
-  'Bookworm', 'Gamer', 'Night owl', 'BDSM', 'Cinephile',
+  'Hookup', 'Bookworm', 'Gamer', 'Night owl', 'BDSM', 'Cinephile',
   'Music nerd', '420 friendly', 'Neurodivergent', 'LGBTQ+',
   'Homebody', 'Cottagecore', 'Dark academia', 'True crime',
   'Fitness', 'Dog parent', 'Overthinker',
@@ -134,4 +135,3 @@ export const CATEGORY_LABELS: Record<string, string> = {
   identity: 'Identity',
   communities: 'Communities',
 }
-
