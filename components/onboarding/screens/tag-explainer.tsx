@@ -1,158 +1,133 @@
 'use client'
 
-import { Heading, Sub } from '@/components/onboarding/ui'
-
-const TIERS = [
-  {
-    name: 'public',
-    icon: '👁',
-    color: '#9b85e8',
-    bg: 'rgba(155,133,232,0.08)',
-    border: 'rgba(155,133,232,0.3)',
-    title: 'Public tags',
-    description: 'Shown on your folio. These are your conversation starters — the things you want people to see and respond to.',
-    examples: ['books', 'cinema', 'dogs', 'cooking', 'night-owl'],
-  },
-  {
-    name: 'match',
-    icon: '⚡',
-    color: '#c8922a',
-    bg: 'rgba(200,146,42,0.08)',
-    border: 'rgba(200,146,42,0.3)',
-    title: 'Match boosters',
-    description: "Invisible on your profile but boost your rank with people who share them. Use these for things you care about but don't want to lead with.",
-    examples: ['ambitious', 'therapy-positive', 'non-monogamy-curious', 'sober', 'neurodivergent'],
-  },
-  {
-    name: 'filter',
-    icon: '🚫',
-    color: '#e07070',
-    bg: 'rgba(224,112,112,0.08)',
-    border: 'rgba(224,112,112,0.25)',
-    title: 'Hard filters',
-    description: "People with these tags won't appear in your feed at all. Use sparingly — the more you filter, the smaller your pool.",
-    examples: ['smoker', 'wants-kids', 'no-strings', 'long-distance-only'],
-  },
-  {
-    name: 'setting',
-    icon: '🔒',
-    color: '#7ab8a0',
-    bg: 'rgba(122,184,160,0.08)',
-    border: 'rgba(122,184,160,0.25)',
-    title: 'Private settings',
-    description: "Only you can see these. They help us understand you better and improve your matches over time without broadcasting everything.",
-    examples: ['introverted', 'anxious-attachment', 'recently-out', 'figuring-it-out'],
-  },
-]
-
-const WILD_TAGS = [
-  'would-survive-apocalypse',
-  'cries-at-ads',
-  'has-opinions-about-fonts',
-  'never-checks-voicemail',
-  'knows-too-much-about-wine',
-  'emotionally-available',
-  'will-debate-pasta-shapes',
-  'chronically-online',
-  'talks-to-animals',
-  'owns-too-many-books',
-]
+import { Heading, Sub, ScreenWrapper } from '@/components/onboarding/ui'
+import { motion } from 'framer-motion'
 
 export function TagExplainerScreen() {
-  return (
-    <div>
-      <Heading>tags aren't just vibes.</Heading>
-      <Sub>they're a system. here's how it works.</Sub>
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 }
+    }
+  }
 
-      {/* Tier cards */}
-      <div className="flex flex-col gap-3 mb-8">
-        {TIERS.map(tier => (
-          <div
-            key={tier.name}
-            className="rounded-2xl p-4"
-            style={{
-              background: tier.bg,
-              border: `1px solid ${tier.border}`,
-            }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span style={{ fontSize: '16px' }}>{tier.icon}</span>
-              <p
-                className="font-mono text-[10px] uppercase tracking-[0.14em] font-bold"
-                style={{ color: tier.color }}
-              >
-                {tier.title}
-              </p>
+  const item = {
+    hidden: { opacity: 0, x: -10 },
+    show: { opacity: 1, x: 0 }
+  }
+
+  return (
+    <ScreenWrapper>
+      <div className="mb-8">
+        <Heading>the language of folio.</Heading>
+        <Sub>Privacy is a gradient here. Here is how it works.</Sub>
+      </div>
+
+      <motion.div 
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="space-y-10"
+      >
+        {/* 01. PUBLIC TAGS */}
+        <motion.section variants={item} className="group">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full border border-[#9b85e8]/40 bg-[#9b85e8]/10 flex items-center justify-center font-mono text-[10px] text-[#9b85e8] group-hover:bg-[#9b85e8]/20 transition-colors">
+              01
             </div>
-            <p
-              className="leading-relaxed mb-3"
-              style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#c8c0e0' }}
-            >
-              {tier.description}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {tier.examples.map(tag => (
-                <span
-                  key={tag}
-                  className="font-mono text-[10px] rounded-full px-2.5 py-1"
-                  style={{
-                    background: 'rgba(0,0,0,0.2)',
-                    border: `1px solid ${tier.border}`,
-                    color: tier.color,
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
+            <div className="space-y-3">
+              <header className="flex items-center gap-2">
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#9b85e8]">Public Tags</span>
+                <span className="h-[1px] w-8 bg-[#9b85e8]/30" />
+              </header>
+              <p className="font-serif text-[17px] leading-relaxed text-[#f5efff]">
+                The things you lead with. They live on your folio like a <span className="italic">secret handshake</span> for people who speak your language.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {['Bookworm', 'Night owl', 'Cinephile', '420 friendly'].map(tag => (
+                  <TagPill key={tag} color="#9b85e8">{tag}</TagPill>
+                ))}
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+        </motion.section>
 
-      {/* Wild tags section */}
-      <div
-        className="rounded-2xl p-4 mb-6"
-        style={{ background: 'rgba(30,21,48,0.6)', border: '1px solid #3a2b58' }}
-      >
-        <p
-          className="font-mono text-[10px] uppercase tracking-[0.14em] mb-2"
-          style={{ color: '#7a6b9a' }}
-        >
-          yes, we have weird ones too
-        </p>
-        <p
-          className="leading-relaxed mb-3"
-          style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#c8c0e0' }}
-        >
-          Some tags are just honest. You don't have to lead with them — put them as match boosters or private settings if you want. But the right person will love them.
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {WILD_TAGS.map(tag => (
-            <span
-              key={tag}
-              className="font-mono text-[10px] rounded-full px-2.5 py-1"
-              style={{
-                background: 'rgba(155,133,232,0.06)',
-                border: '1px solid #3a2b58',
-                color: '#7a6b9a',
-              }}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
+        {/* 02. ECHO TAGS */}
+        <motion.section variants={item} className="group">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full border border-[#c8922a]/40 bg-[#c8922a]/10 flex items-center justify-center font-mono text-[10px] text-[#c8922a] group-hover:bg-[#c8922a]/20 transition-colors">
+              02
+            </div>
+            <div className="space-y-3">
+              <header className="flex items-center gap-2">
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#c8922a]">Echo Tags</span>
+                <span className="h-[1px] w-8 bg-[#c8922a]/30" />
+              </header>
+              <p className="font-serif text-[17px] leading-relaxed text-[#f5efff]">
+                The things you whisper. These are hidden until you start talking to someone who <span className="italic text-[#c8922a]">also</span> has them. 
+              </p>
+              
+              {/* The "Visual Proof" Mockup */}
+              <div className="bg-[#c8922a]/5 border border-[#c8922a]/20 rounded-xl p-4 my-2 border-dashed">
+                <div className="flex flex-col gap-2 font-mono text-[11px] text-[#a07840]">
+                  <div className="flex justify-between items-center opacity-60">
+                    <span>You: [Late ADHD]</span>
+                    <span>Them: [Late ADHD]</span>
+                  </div>
+                  <div className="h-px bg-[#c8922a]/20 w-full" />
+                  <p className="text-[#f5efff] animate-pulse">✨ You both share a hidden signal.</p>
+                </div>
+              </div>
 
-      {/* Bottom note */}
-      <div className="flex items-start gap-3">
-        <span style={{ fontSize: '14px', marginTop: '2px' }}>💡</span>
-        <p
-          className="font-mono text-[10px] leading-relaxed"
-          style={{ color: '#5a4b78' }}
-        >
-          You can add up to 20 tags total. You can change them anytime from your profile. There are no wrong answers — only honest ones.
-        </p>
-      </div>
-    </div>
+              <div className="flex flex-wrap gap-2">
+                {['Rejection sensitive', 'Never dated', 'Anxious attachment'].map(tag => (
+                  <TagPill key={tag} color="#c8922a">{tag}</TagPill>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* 03. FILTERING */}
+        <motion.section variants={item} className="group opacity-80 hover:opacity-100 transition-opacity">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full border border-[#5a4b78]/40 bg-[#5a4b78]/10 flex items-center justify-center font-mono text-[10px] text-[#7a6b9a]">
+              ✕
+            </div>
+            <div className="space-y-2">
+              <p className="font-serif text-[16px] leading-relaxed text-[#ddd2f7]">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[#5a4b78] mr-2">Quiet Filters</span>
+                In the feed, you can cross out any public tag to hide those people. No judgment, just peace.
+              </p>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Footer Note */}
+        <motion.footer variants={item} className="pt-4">
+          <div className="bg-[#1e1530]/40 border border-[#2a1f42] rounded-2xl p-5">
+            <p className="font-serif text-[15px] italic text-[#7a6b9a] leading-relaxed text-center">
+              "The only way to find someone who actually fits is to lead with who you actually are."
+            </p>
+          </div>
+        </motion.footer>
+      </motion.div>
+    </ScreenWrapper>
+  )
+}
+
+function TagPill({ children, color }: { children: React.ReactNode, color: string }) {
+  return (
+    <span 
+      className="font-mono text-[10px] rounded-full px-3 py-1.5 transition-all"
+      style={{ 
+        background: `${color}10`, 
+        border: `1px solid ${color}30`, 
+        color: color 
+      }}
+    >
+      {children}
+    </span>
   )
 }
