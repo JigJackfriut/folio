@@ -10,24 +10,22 @@ import { IntentScreen }      from '@/components/onboarding/screens/intent'
 import { BasicsScreen }      from '@/components/onboarding/screens/basics'
 import { LocationScreen }    from '@/components/onboarding/screens/location'
 import { PreferencesScreen } from '@/components/onboarding/screens/preferences'
-import { FiltersScreen }     from '@/components/onboarding/screens/filters'
 import { TagsScreen }        from '@/components/onboarding/screens/tags'
 import { PostScreen }        from '@/components/onboarding/screens/post'
 import { PreviewScreen }     from '@/components/onboarding/screens/preview'
 import { TagExplainerScreen } from '@/components/onboarding/screens/tag-explainer'
 
-const TOTAL = 9
+const TOTAL = 8
 
 const STEP_HEADINGS: Record<number, { title: string; sub: string }> = {
   1: { title: 'what do you\nactually want?',      sub: 'be honest with yourself'   },
   2: { title: 'who\nare you?',                     sub: 'just the basics'           },
   3: { title: 'where\nare you?',                   sub: 'sets your matching radius'  },
   4: { title: 'who do you\nwant to meet?',         sub: 'select all that apply'     },
-  5: { title: 'a few things\nthat matter',         sub: 'invisible to others'       },
-  6: { title: 'how tags\nwork',                    sub: 'read this once'            },
-  7: { title: "what's\nactually you?",             sub: 'tap to add tags'           },
-  8: { title: 'write your\nfolio',                 sub: 'write like a person'       },
-  9: { title: "here's how\nyou'll appear",         sub: 'edit anytime'              },
+  5: { title: 'how tags\nwork',                    sub: 'read this once'            },
+  6: { title: "what's\nactually you?",             sub: 'tap to add tags'           },
+  7: { title: 'write your\nfolio',                 sub: 'write like a person'       },
+  8: { title: "here's how\nyou'll appear",         sub: 'edit anytime'              },
 }
 
 export default function OnboardingPage() {
@@ -42,7 +40,7 @@ export default function OnboardingPage() {
   const router    = useRouter()
   const supabase  = createClient()
 
-  const canNext: Record<number, boolean> = {
+const canNext: Record<number, boolean> = {
   1: !!state.intent_type,
   2: !!state.display_name.trim() && !!state.age && parseInt(state.age, 10) >= 18 && state.gender_identity.length > 0,
   3: (() => {
@@ -53,10 +51,9 @@ export default function OnboardingPage() {
   })(),
   4: state.gender_preference.length > 0,
   5: true,
-  6: true, // explainer — always can continue
-  7: true,
-  8: !!state.post_headline.trim() && state.post_headline.trim().length <= 120 && state.post_body.trim().length <= 2000,
-  9: true,
+  6: true,
+  7: !!state.post_headline.trim() && state.post_headline.trim().length <= 120 && state.post_body.trim().length <= 2000,
+  8: true,
 }
 
   const navigate = (newStep: number) => {
@@ -170,11 +167,10 @@ const screens: Record<number, React.ReactNode> = {
   2: <BasicsScreen />,
   3: <LocationScreen />,
   4: <PreferencesScreen />,
-  5: <FiltersScreen />,
-  6: <TagExplainerScreen />,
-  7: <TagsScreen />,
-  8: <PostScreen />,
-  9: <PreviewScreen />,
+  5: <TagExplainerScreen />,
+  6: <TagsScreen />,
+  7: <PostScreen />,
+  8: <PreviewScreen />,
 }
 
   const heading = STEP_HEADINGS[step]
@@ -257,9 +253,9 @@ const screens: Record<number, React.ReactNode> = {
           onNext={goNext}
           onSkip={goSkip}
           backVisible={step > 1}
-          skipVisible={step === 5 || step === 7}
+          skipVisible={step === 6}
           nextDisabled={!canNext[step] || saving}
-          nextLabel={saving ? 'saving...' : step === TOTAL ? 'publish my folio' : step === 6 ? 'got it →' : 'continue'}
+          nextLabel={saving ? 'saving...' : step === TOTAL ? 'publish my folio' : step === 5 ? 'got it →' : 'continue'}
         />
       </div>
     </main>
