@@ -15,31 +15,25 @@ export interface OnboardingState {
   display_name: string
   age: string
   gender_identity: string[]
-  // S3 — flexible matching base
+  // S3
   match_base: 'location' | 'college'
   location_raw: string
-  location_place_id: string                                    // 👈 added
+  location_place_id: string
   college_name: string
   college_country: string
   college_url: string
   match_radius_miles: number
   hide_exact_location: boolean
   open_to_distance: boolean
-  open_to_online: boolean                                      // 👈 added
-  connection_pref: 'in-person' | 'both' | 'online'            // 👈 added
+  open_to_online: boolean
+  connection_pref: 'in-person' | 'both' | 'online'
   // S4
   gender_preference: string[]
   age_min: number
   age_max: number
-  // S5
-  filter_kids: string
-  filter_structure: string
-  filter_smoking: string
-  filter_alcohol: string
-  filter_religion: string
-  // S6
+  // S5 — tags
   tags: TagEntry[]
-  // S7
+  // S6 — post
   post_headline: string
   post_body: string
 }
@@ -51,23 +45,18 @@ const initial: OnboardingState = {
   gender_identity: [],
   match_base: 'location',
   location_raw: '',
-  location_place_id: '',                                       // 👈 added
+  location_place_id: '',
   college_name: '',
   college_country: '',
   college_url: '',
   match_radius_miles: 25,
   hide_exact_location: true,
   open_to_distance: false,
-  open_to_online: false,                                       // 👈 added
-  connection_pref: 'both',                                     // 👈 added
+  open_to_online: false,
+  connection_pref: 'both',
   gender_preference: [],
   age_min: 22,
   age_max: 36,
-  filter_kids: 'open',
-  filter_structure: 'open',
-  filter_smoking: 'any',
-  filter_alcohol: 'any',
-  filter_religion: 'open',
   tags: [],
   post_headline: '',
   post_body: '',
