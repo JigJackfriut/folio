@@ -13,7 +13,7 @@ const garamond = EB_Garamond({
 const spaceMono = Space_Mono({
   subsets: ['latin'],
   weight: ['400', '700'],
-  variable: '--font-mono',
+  variable: '--font-space-mono',
 })
 
 export const metadata: Metadata = {
@@ -26,12 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${garamond.variable} ${spaceMono.variable} antialiased`}>
         {children}
-
         <Script
-  src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&libraries=places&loading=async&v=weekly`}
-  async
-  defer
-/>
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&libraries=places&loading=async&v=weekly`}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
