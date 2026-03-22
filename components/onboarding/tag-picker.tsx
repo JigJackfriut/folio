@@ -3,17 +3,12 @@
 import { useState, useMemo } from 'react'
 import { TAG_CATEGORIES, POPULAR_TAGS, CATEGORY_LABELS, type TagEntry, type TagTier } from '@/lib/tags'
 
-// ── Tier config ───────────────────────────────────────────────────────────────
-
-const TIER_CONFIG: Record<TagTier, { label: string; bg: string; text: string }> = {
-  public: { label: 'Public',  bg: '#6d4bc3', text: '#ffffff' },
-  shared: { label: 'Match',   bg: '#b45309', text: '#ffffff' },
-  filter: { label: 'Filter',  bg: '#0f766e', text: '#ffffff' },
+const TIER_CONFIG: Record<TagTier, { label: string; bg: string; text: string; desc: string }> = {
+  public: { label: 'Public',  bg: '#6d4bc3', text: '#ffffff', desc: 'visible on your profile' },
+  echo:   { label: 'Echo',    bg: '#b45309', text: '#ffffff', desc: 'hidden — revealed mutually in threads' },
 }
 
-const TIER_ORDER: TagTier[] = ['public', 'shared', 'filter']
-
-// ── Segmented tier toggle ─────────────────────────────────────────────────────
+const TIER_ORDER: TagTier[] = ['public', 'echo']
 
 function TierToggle({ tier, onChange }: { tier: TagTier; onChange: (t: TagTier) => void }) {
   return (
@@ -40,7 +35,7 @@ function TierToggle({ tier, onChange }: { tier: TagTier; onChange: (t: TagTier) 
               cursor: 'pointer',
               transition: 'all 0.15s',
               letterSpacing: isActive ? '0.02em' : '0',
-              borderRight: t !== 'filter' ? '1px solid #2a1f42' : 'none',
+              borderRight: t !== 'echo' ? '1px solid #2a1f42' : 'none',
             }}
           >
             {cfg.label}
@@ -50,8 +45,6 @@ function TierToggle({ tier, onChange }: { tier: TagTier; onChange: (t: TagTier) 
     </div>
   )
 }
-
-// ── Selected tag ──────────────────────────────────────────────────────────────
 
 function SelectedTag({
   name, tier, onTierChange, onRemove,
@@ -97,8 +90,6 @@ function SelectedTag({
   )
 }
 
-// ── Pool tag — raw text, no border ────────────────────────────────────────────
-
 function PoolTag({ name, isHot, onClick }: { name: string; isHot: boolean; onClick: () => void }) {
   return (
     <button
@@ -135,8 +126,6 @@ function PoolTag({ name, isHot, onClick }: { name: string; isHot: boolean; onCli
   )
 }
 
-// ── Main TagPicker ────────────────────────────────────────────────────────────
-
 export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (tags: TagEntry[]) => void }) {
   const [activeCategory, setActiveCategory] = useState('popular')
   const [search, setSearch] = useState('')
@@ -166,22 +155,16 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
     return result
   }, [activeCategory, search])
 
-  // ── Legend ──
   const legend = (
     <div className="flex flex-col gap-2 rounded-xl p-3" style={{ background: 'rgba(30,21,48,0.6)', border: '1px solid #2a1f42' }}>
       {TIER_ORDER.map(t => {
         const c = TIER_CONFIG[t]
-        const desc: Record<string, string> = {
-          public: 'visible to everyone on your profile',
-          shared: 'hidden until you both match, then revealed to each other',
-          filter: 'never shown to anyone — quietly filters who appears in your feed',
-        }
         return (
           <div key={t} className="flex items-start gap-2.5">
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.bg, display: 'inline-block', flexShrink: 0, marginTop: '3px' }} />
             <p style={{ fontSize: '12px', lineHeight: '1.5' }}>
               <span style={{ color: '#f0eaff', fontWeight: 600 }}>{c.label}</span>
-              <span style={{ color: '#7a6b9a' }}> — {desc[t]}</span>
+              <span style={{ color: '#7a6b9a' }}> — {c.desc}</span>
             </p>
           </div>
         )
@@ -189,10 +172,8 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
     </div>
   )
 
-  // ── Left pane: search + categories + pool ──
   const leftPane = (
     <div className="flex flex-col gap-3 min-w-0">
-      {/* Search */}
       <div className="relative">
         <span className="absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#4a3b68', fontSize: '14px' }}>⌕</span>
         <input
@@ -223,7 +204,6 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
         )}
       </div>
 
-      {/* Category pills */}
       {!search && (
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
           {Object.keys(TAG_CATEGORIES).map(cat => (
@@ -247,11 +227,7 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
         </div>
       )}
 
-      {/* Pool */}
-      <div
-        className="overflow-y-auto scrollbar-thin"
-        style={{ maxHeight: '380px', paddingRight: '4px' }}
-      >
+      <div className="overflow-y-auto scrollbar-thin" style={{ maxHeight: '380px', paddingRight: '4px' }}>
         {filteredSections.map(([section, tags]) => {
           const pool = tags.filter(t => !selectedNames.has(t))
           if (pool.length === 0) return null
@@ -272,12 +248,11 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
     </div>
   )
 
-  // ── Right pane: selected tags ──
   const rightPane = (
     <div className="flex flex-col gap-3 min-w-0">
       <div>
         <p className="font-mono text-[9px] uppercase tracking-[0.12em] mb-1" style={{ color: '#4a3b68' }}>
-          your curated tags
+          your tags
           {value.length > 0 && <span style={{ color: '#3a2b58' }}> · {value.length} added</span>}
         </p>
         {legend}
@@ -310,13 +285,10 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
 
   return (
     <>
-      {/* Desktop: side by side */}
       <div className="hidden lg:grid gap-8" style={{ gridTemplateColumns: '1fr 1fr' }}>
         {leftPane}
         {rightPane}
       </div>
-
-      {/* Mobile: stacked */}
       <div className="lg:hidden flex flex-col gap-5">
         {legend}
         {value.length > 0 && (
@@ -340,4 +312,3 @@ export function TagPicker({ value, onChange }: { value: TagEntry[]; onChange: (t
     </>
   )
 }
-
