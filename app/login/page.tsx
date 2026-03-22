@@ -172,6 +172,19 @@ export default function LoginPage() {
             className="rounded-[24px] border border-[#4b376f]/80 bg-[#241936]/75 p-6 shadow-[0_20px_90px_rgba(5,0,20,0.45),0_0_45px_rgba(109,75,195,0.18)] backdrop-blur-xl"
           >
             <div className="flex flex-col gap-4">
+              <button
+  type="button"
+  onClick={handleGoogleLogin}
+  className="w-full rounded-xl border border-[#4b376f] bg-[#2c2044]/90 py-3 font-mono text-xs uppercase tracking-[0.2em] text-[#e4dbff] hover:bg-[#3a2b58] transition-all"
+>
+  continue with google
+</button>
+
+<div className="flex items-center gap-3">
+  <div className="h-px flex-1 bg-[#4b376f]" />
+  <span className="font-mono text-[10px] text-[#a99abb] uppercase tracking-[0.2em]">or</span>
+  <div className="h-px flex-1 bg-[#4b376f]" />
+</div>
               <LayoutGroup>
                 <div className="relative flex rounded-xl border border-[#4b376f] bg-[#2c2044]/90 p-1">
                   {(['login', 'signup'] as const).map((t) => (
