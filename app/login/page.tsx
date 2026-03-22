@@ -22,24 +22,25 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  // 🔥 GOOGLE LOGIN
   const handleGoogleLogin = async () => {
-  setError('')
-  setLoading(true)
+    setError('')
+    setLoading(true)
 
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
 
-    if (error) throw error
-  } catch (err: any) {
-    setError(err.message)
-    setLoading(false)
+      if (error) throw error
+    } catch (err: any) {
+      setError(err.message)
+      setLoading(false)
+    }
   }
-}
 
   const getPasswordStrength = () => {
     if (password.length === 0) return 0
@@ -78,30 +79,23 @@ export default function LoginPage() {
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setError('')
-
     setLoading(true)
 
     try {
       if (mode === 'signup') {
         if (usernameStatus !== 'available') throw new Error('Username is not available.')
-        
-        // SIGNUP: We only sign up. Profile creation should be handled by a DB trigger.
-        // We will save the 'handle' to the profile in the first step of Onboarding.
-        const { data, error: authErr } = await supabase.auth.signUp({
+
+        const { error: authErr } = await supabase.auth.signUp({
           email: email.toLowerCase().trim(),
           password,
           options: {
-            data: { 
-              // Passing handle in metadata so the DB trigger can grab it if set up
-              handle: username 
-            }
+            data: { handle: username }
           }
         })
         if (authErr) throw authErr
-        
+
         router.push('/onboarding')
       } else {
-        // LOGIN logic
         let loginEmail = identifier.trim().toLowerCase()
 
         if (!loginEmail.includes('@')) {
@@ -115,13 +109,12 @@ export default function LoginPage() {
           loginEmail = profile.email
         }
 
-        const { data: signInData, error: logErr } = await supabase.auth.signInWithPassword({ 
-          email: loginEmail, 
-          password 
+        const { data: signInData, error: logErr } = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password
         })
         if (logErr) throw new Error('Invalid login credentials.')
 
-        // Check if onboarding is done
         const { data: profile } = await supabase
           .from('profiles')
           .select('onboarding_complete')
@@ -134,6 +127,7 @@ export default function LoginPage() {
           router.push('/onboarding')
         }
       }
+
       router.refresh()
     } catch (err: any) {
       setError(err.message)
@@ -149,167 +143,82 @@ export default function LoginPage() {
   const inputStyle = 'w-full rounded-xl border border-[#4f3c73] bg-[#2a1f42]/90 px-4 py-3 font-sans text-sm text-[#f5efff] outline-none transition-all placeholder:text-[#a99abb] focus:border-[#c3b3ff] focus:ring-2 focus:ring-[#8f73e633]'
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#1b1328] px-6 selection:bg-[#8f73e655]">
+    <main className="relative min-h-screen overflow-hidden bg-[#1b1328] px-6">
       <BackgroundGlow />
 
       <div className="relative z-10 flex min-h-screen items-center justify-center">
         <div className="w-full max-w-sm">
+
           <header className="mb-8 text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-3 font-serif text-6xl italic tracking-tighter text-[#f5efff] drop-shadow-[0_10px_25px_rgba(143,115,230,0.22)]"
-            >
-              folio.
-            </motion.h1>
-            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.42em] text-[#ddd2f7] opacity-100">
+            <h1 className="mb-3 font-serif text-6xl italic text-[#f5efff]">folio.</h1>
+            <p className="font-mono text-[11px] uppercase tracking-[0.42em] text-[#ddd2f7]">
               Any meaningful connection
             </p>
           </header>
 
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-[24px] border border-[#4b376f]/80 bg-[#241936]/75 p-6 shadow-[0_20px_90px_rgba(5,0,20,0.45),0_0_45px_rgba(109,75,195,0.18)] backdrop-blur-xl"
-          >
-            <div className="flex flex-col gap-4">
-              <button
-  type="button"
-  onClick={handleGoogleLogin}
-  className="w-full rounded-xl border border-[#4b376f] bg-[#2c2044]/90 py-3 font-mono text-xs uppercase tracking-[0.2em] text-[#e4dbff] hover:bg-[#3a2b58] transition-all"
->
-  continue with google
-</button>
+          <form onSubmit={handleSubmit} className="rounded-[24px] border border-[#4b376f]/80 bg-[#241936]/75 p-6 backdrop-blur-xl">
 
-<div className="flex items-center gap-3">
-  <div className="h-px flex-1 bg-[#4b376f]" />
-  <span className="font-mono text-[10px] text-[#a99abb] uppercase tracking-[0.2em]">or</span>
-  <div className="h-px flex-1 bg-[#4b376f]" />
-</div>
+            <div className="flex flex-col gap-4">
+
+              {/* TOGGLE */}
               <LayoutGroup>
-                <div className="relative flex rounded-xl border border-[#4b376f] bg-[#2c2044]/90 p-1">
+                <div className="flex rounded-xl border border-[#4b376f] bg-[#2c2044]/90 p-1">
                   {(['login', 'signup'] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => { setMode(t); setError('') }}
-                      className={`relative z-10 flex-1 rounded-lg py-2.5 font-mono text-xs uppercase tracking-[0.18em] transition-colors ${
-                        mode === t ? 'font-bold text-white' : 'text-[#c1b4df] hover:text-[#f0eaff]'
-                      }`}
-                    >
+                    <button key={t} type="button" onClick={() => setMode(t)}
+                      className={`flex-1 py-2.5 font-mono text-xs uppercase ${
+                        mode === t ? 'text-white font-bold' : 'text-[#c1b4df]'
+                      }`}>
                       {t === 'login' ? 'log in' : 'sign up'}
-                      {mode === t && (
-                        <motion.div
-                          layoutId="activeTab"
-                          className="absolute inset-0 -z-10 rounded-lg bg-[#6d4bc3]"
-                          transition={{ type: 'spring', bounce: 0.2, duration: 0.55 }}
-                        />
-                      )}
                     </button>
                   ))}
                 </div>
               </LayoutGroup>
 
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={mode}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex flex-col gap-4"
-                >
-                  {mode === 'signup' && (
-                    <>
-                      <div className="space-y-1.5">
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-sm text-[#a696c8]">@</span>
-                          <input
-                            type="text"
-                            autoComplete="username"
-                            placeholder="username"
-                            value={username}
-                            onChange={(e) => checkUsername(e.target.value)}
-                            className={`${inputStyle} pl-8`}
-                          />
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                            {usernameStatus === 'checking' && <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#c3b3ff] border-t-transparent" />}
-                            {usernameStatus === 'available' && <span className="text-xs text-violet-300">✓</span>}
-                            {usernameStatus === 'taken' && <span className="text-xs text-rose-400">×</span>}
-                          </div>
-                        </div>
-                        <p className={`px-1 font-mono text-[10px] ${usernameStatus === 'taken' ? 'text-rose-400' : 'text-[#c1b4dc]'}`}>
-                          {usernameStatus === 'taken' ? 'Already taken' : 'At least 3 characters'}
-                        </p>
-                      </div>
-                      <input
-                        type="email"
-                        autoComplete="email"
-                        placeholder="email address"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className={inputStyle}
-                      />
-                    </>
-                  )}
+              {/* GOOGLE BUTTON */}
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-3 rounded-xl bg-white py-3 text-sm font-medium text-gray-800 hover:bg-gray-100"
+              >
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="h-5 w-5" />
+                Continue with Google
+              </button>
 
-                  {mode === 'login' && (
-                    <input
-                      type="text"
-                      autoComplete="username"
-                      placeholder="email or username"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      className={inputStyle}
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              <div className="space-y-2">
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    placeholder="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={inputStyle}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.15em] text-[#b3a5d0] hover:text-[#f0eaff]"
-                  >
-                    {showPassword ? 'hide' : 'show'}
-                  </button>
-                </div>
-                {mode === 'signup' && (
-                  <div className="flex h-1.5 gap-1 px-1">
-                    {[1, 2, 3].map((step) => (
-                      <div key={step} className={`h-full flex-1 rounded-full transition-colors duration-500 ${strength >= step ? (strength === 1 ? 'bg-rose-500/70' : strength === 2 ? 'bg-amber-400/70' : 'bg-violet-400/80') : 'bg-[#3a2b58]'}`} />
-                    ))}
-                  </div>
-                )}
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-[#4b376f]" />
+                <span className="text-[10px] text-[#a99abb] uppercase">or</span>
+                <div className="h-px flex-1 bg-[#4b376f]" />
               </div>
 
-              <div className="flex h-4 items-center justify-center">
-                {error && <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-rose-400">{error}</p>}
-              </div>
+              {/* INPUTS */}
+              {mode === 'login' && (
+                <input
+                  placeholder="email or username"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className={inputStyle}
+                />
+              )}
+
+              <input
+                type="password"
+                placeholder="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputStyle}
+              />
+
+              {error && <p className="text-red-400 text-xs">{error}</p>}
 
               <button
                 type="submit"
                 disabled={loading || isFormInvalid}
-                className="w-full rounded-xl bg-[#6d4bc3] py-4 font-mono text-sm font-bold uppercase tracking-[0.22em] text-white shadow-lg shadow-[#6d4bc340] transition-all hover:shadow-[#6d4bc360] active:scale-[0.98] disabled:bg-[#3b2f4f] disabled:text-[#9587b0] disabled:opacity-60"
+                className="w-full rounded-xl bg-[#6d4bc3] py-3 text-white"
               >
-                {loading ? 'Processing...' : mode === 'login' ? '→ log in' : '→ create account'}
+                {loading ? 'please wait...' : mode === 'login' ? 'log in' : 'sign up'}
               </button>
 
-              <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#b8abcf]">
-                {mode === 'login' ? "don't have an account?" : 'already a member?'}{' '}
-                <button type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-[#e4dbff] hover:underline">
-                  {mode === 'login' ? 'sign up' : 'log in'}
-                </button>
-              </p>
             </div>
           </form>
         </div>
