@@ -22,11 +22,8 @@ export function TagExplainerScreen() {
           </p>
         </div>
         <div style={{ paddingLeft: '40px' }}>
-          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '16px', color: '#f0eaff', lineHeight: 1.65, marginBottom: '10px' }}>
-            These show up on your folio. Think of them less as a list of hobbies and more as the things you'd actually bring up in a first conversation — or the things that would make someone think <span style={{ fontStyle: 'italic' }}>oh, same.</span>
-          </p>
-          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '14px', color: '#7a6b9a', lineHeight: 1.6, marginBottom: '12px' }}>
-            Hookup is in here. So is ADHD. So is cottagecore. No hierarchy.
+          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '16px', color: '#f0eaff', lineHeight: 1.65, marginBottom: '12px' }}>
+            Visible on your profile. Anyone browsing can see them.
           </p>
           <div className="flex flex-wrap gap-1.5">
             {['Bookworm', 'Hookup', 'Night owl', 'Cinephile', 'ADHD', 'In therapy', 'Dog parent', '420 friendly'].map(tag => (
@@ -42,6 +39,7 @@ export function TagExplainerScreen() {
         </div>
       </div>
 
+      {/* Echo */}
       <div className="mb-6" style={{ borderTop: '1px solid #2a1f42', paddingTop: '20px' }}>
         <div className="flex items-center gap-3 mb-3">
           <div
@@ -56,10 +54,7 @@ export function TagExplainerScreen() {
         </div>
         <div style={{ paddingLeft: '40px' }}>
           <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '16px', color: '#f0eaff', lineHeight: 1.65, marginBottom: '10px' }}>
-            Hidden from everyone. The app holds onto them quietly. If you and someone else both chose the same one, it shows up inside your thread — not before, not on your profile. Just there, between you two, once the conversation starts.
-          </p>
-          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '14px', color: '#7a6b9a', lineHeight: 1.6, marginBottom: '10px' }}>
-            These are for the things you don't lead with. The stuff that takes four months to say on a normal app.
+            Hidden from everyone. If you and someone else both picked the same echo tag, it surfaces inside your thread once a conversation opens — not before, not on your profile.
           </p>
           <div
             className="rounded-xl p-3 mb-3"
@@ -86,6 +81,7 @@ export function TagExplainerScreen() {
         </div>
       </div>
 
+      {/* Cross out */}
       <div className="mb-6" style={{ borderTop: '1px solid #2a1f42', paddingTop: '20px' }}>
         <div className="flex items-center gap-3 mb-3">
           <div
@@ -100,20 +96,21 @@ export function TagExplainerScreen() {
         </div>
         <div style={{ paddingLeft: '40px' }}>
           <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '16px', color: '#f0eaff', lineHeight: 1.65, marginBottom: '10px' }}>
-            Once you're in the feed, you can cross out any public tag. Posts from people with that tag stop appearing. Not a vibe check, not a judgment — just your feed, shaped to what actually makes sense for you.
+            From the feed you can cross out any public tag. Posts from people with that tag won't appear. Nobody else can see what you've crossed out.
           </p>
           <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '14px', color: '#7a6b9a', lineHeight: 1.6 }}>
-            Nobody knows. It's not a block. You set it in the feed, not here.
+            You set this in the feed, not here.
           </p>
         </div>
       </div>
 
+      {/* Closing note */}
       <div
         className="rounded-xl p-4"
         style={{ background: 'rgba(30,21,48,0.5)', border: '1px solid #2a1f42' }}
       >
         <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#7a6b9a', lineHeight: 1.7, fontStyle: 'italic' }}>
-          You can change any of this later. There's no profile minimum. The only thing worth avoiding is picking tags you think sound good rather than ones that are actually true.
+          You can change all of this from your profile at any time.
         </p>
       </div>
     </div>
