@@ -9,16 +9,14 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('onboarding_complete')
-        .eq('id', data.user.id)
-        .single()
-      if (!profile?.onboarding_complete) {
-        return NextResponse.redirect(new URL('/onboarding', origin))
-      }
-      return NextResponse.redirect(new URL('/feed', origin))
-    }
+  const isOnboarded =
+    data.user.user_metadata?.onboarding_complete === true
+
+  if (!isOnboarded) {
+    return NextResponse.redirect(new URL('/onboarding', origin))
   }
+
+  return NextResponse.redirect(new URL('/feed', origin))
+}
   return NextResponse.redirect(new URL('/login', origin))
 }
