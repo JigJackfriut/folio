@@ -109,36 +109,47 @@ export default function LoginPage() {
         if (authErr) throw authErr
 
         router.push('/onboarding')
-      } else {
-        let loginEmail = identifier.trim().toLowerCase()
+        router.refresh()
+        return
+      }
 
-        if (!loginEmail.includes('@')) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('handle', loginEmail.replace(/[^a-z0-9._]/g, ''))
-            .maybeSingle()
+      let loginEmail = identifier.trim().toLowerCase()
 
-          if (!profile) throw new Error('Invalid login credentials.')
-          loginEmail = profile.email
+      if (!loginEmail.includes('@')) {
+        const cleanedHandle = loginEmail.replace(/[^a-z0-9._]/g, '')
+
+        const { data: profile, error: profileErr } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('handle', cleanedHandle)
+          .maybeSingle()
+
+        if (profileErr) throw profileErr
+        if (!profile?.email) {
+          throw new Error('Invalid login credentials.')
         }
 
-        const { data: signInData, error: logErr } =
-          await supabase.auth.signInWithPassword({
-            email: loginEmail,
-            password,
-          })
+        loginEmail = profile.email
+      }
 
-        if (logErr) throw new Error('Invalid login credentials.')
+      const { data: signInData, error: logErr } =
+        await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password,
+        })
 
-const isOnboarded =
-  signInData.user.user_metadata?.onboarding_complete === true
+      if (logErr || !signInData.user) {
+        throw new Error('Invalid login credentials.')
+      }
 
-if (isOnboarded) {
-  router.push('/feed')
-} else {
-  router.push('/onboarding')
-}
+      const isOnboarded =
+        signInData.user.user_metadata?.onboarding_complete === true
+
+      if (isOnboarded) {
+        router.push('/feed')
+      } else {
+        router.push('/onboarding')
+      }
 
       router.refresh()
     } catch (err: any) {
