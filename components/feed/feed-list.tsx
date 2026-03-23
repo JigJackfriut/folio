@@ -28,22 +28,18 @@ export function FeedList({ posts, crossedTags, loadingMore, hasMore, onLoadMore 
 
   if (posts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
-        <p
-          style={{
-            fontFamily: 'EB Garamond, Georgia, serif',
-            fontStyle: 'italic',
-            fontSize: '20px',
-            color: '#5a4b78',
-            marginBottom: '8px',
-          }}
-        >
+      <div className="flex flex-col items-center justify-center py-32 px-8 text-center">
+        <p style={{
+          fontFamily: 'EB Garamond, Georgia, serif',
+          fontStyle: 'italic',
+          fontSize: '22px',
+          color: '#7a6b9a',
+          marginBottom: '10px',
+          lineHeight: 1.5,
+        }}>
           nothing here yet.
         </p>
-        <p
-          className="font-mono text-[10px] uppercase tracking-widest"
-          style={{ color: '#3a2b58' }}
-        >
+        <p className="font-mono text-[11px] uppercase tracking-widest" style={{ color: '#4a3b68' }}>
           be the first to write a post
         </p>
       </div>
@@ -54,18 +50,18 @@ export function FeedList({ posts, crossedTags, loadingMore, hasMore, onLoadMore 
   const unexpected = posts.filter(p => p.signal === 'unexpected')
 
   return (
-    <div className="px-4 pt-4 flex flex-col gap-3 pb-8">
+    <div className="px-4 pt-4 flex flex-col gap-3 pb-10">
       {primary.map(post => (
         <PostCard key={post.id} post={post} crossedTags={crossedTags} />
       ))}
 
       {unexpected.length > 0 && (
         <>
-          <div className="flex items-center gap-3 py-2">
+          <div className="flex items-center gap-3 py-3">
             <div className="flex-1 h-px" style={{ background: '#2a1f42' }} />
             <span
-              className="font-mono text-[9px] uppercase tracking-[0.14em]"
-              style={{ color: '#3a2b58' }}
+              className="font-mono text-[10px] uppercase tracking-[0.14em]"
+              style={{ color: '#5a4b78' }}
             >
               different frequency
             </span>
@@ -90,8 +86,8 @@ export function FeedList({ posts, crossedTags, loadingMore, hasMore, onLoadMore 
 
       {!hasMore && posts.length > 0 && (
         <p
-          className="text-center font-mono text-[10px] uppercase tracking-widest py-8"
-          style={{ color: '#2e2040' }}
+          className="text-center font-mono text-[11px] uppercase tracking-widest py-10"
+          style={{ color: '#3a2b58' }}
         >
           you've seen everything
         </p>
@@ -99,4 +95,3 @@ export function FeedList({ posts, crossedTags, loadingMore, hasMore, onLoadMore 
     </div>
   )
 }
-
