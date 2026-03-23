@@ -35,6 +35,7 @@ export interface Post {
   post_body: string
   tag_names: string[]
   seeking: string
+  status: 'active' | 'archived'
   embedding: number[] | null
   created_at: string
 }
@@ -59,6 +60,7 @@ export interface PostWithSignal extends PostWithAuthor {
   signal: SignalType
   signal_reason: string
   matched_tags: string[]
+  echo_count: number
 }
 
 // ── Tags ──────────────────────────────────────────────────────────────────────
@@ -117,21 +119,13 @@ export interface OpenThread {
 
 // ── Matching ──────────────────────────────────────────────────────────────────
 
-export interface MatchScore {
-  post_id: string
-  tag_overlap: number
-  shared_intent: boolean
-  shared_connection_pref: boolean
-  total_score: number
-}
-
 export interface SignalResult {
   signal: SignalType
   reason: string
   matched_tags: string[]
 }
 
-// ── Feed state ────────────────────────────────────────────────────────────────
+// ── Feed ──────────────────────────────────────────────────────────────────────
 
 export interface FeedFilters {
   crossed_tags: string[]
