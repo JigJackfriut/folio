@@ -44,10 +44,11 @@ export function PostCard({ post, crossedTags }: Props) {
         {/* Signal + time */}
         <div className="flex items-center justify-between mb-4">
           <SignalLabel
-            signal={post.signal}
-            reason={post.signal_reason}
-            echoCount={post.echo_count}
-          />
+  signal={post.signal}
+  reason={post.signal_reason}
+  echoCount={post.echo_count}
+  matchedTags={post.matched_tags}
+/>
           <span
             className="font-mono text-[10px]"
             style={{ color: '#4a3b68', letterSpacing: '0.04em' }}
