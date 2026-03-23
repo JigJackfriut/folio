@@ -23,8 +23,8 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // This fetches the JWT, which contains user_metadata
   const { data: { user } } = await supabase.auth.getUser()
-
   const pathname = request.nextUrl.pathname
 
   const isPublicRoute =
@@ -35,21 +35,28 @@ export async function middleware(request: NextRequest) {
 
   const isOnboardingRoute = pathname.startsWith('/onboarding')
 
-  // Not logged in → send to login
+  // 1. Not logged in + trying to access private route -> Send to Login
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Logged in → check onboarding_complete
-  if (user && !isPublicRoute && !isOnboardingRoute) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_complete')
-      .eq('id', user.id)
-      .single()
+  if (user) {
+    // Check our fast JWT metadata instead of hitting the database
+    const isOnboarded = user.user_metadata?.onboarding_complete === true
 
-    if (!profile?.onboarding_complete) {
+    // 2. Logged in + not onboarded + trying to access app -> Send to Onboarding
+    if (!isOnboarded && !isPublicRoute && !isOnboardingRoute) {
       return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
+
+    // 3. Logged in + onboarded + trying to access Auth routes -> Send to Feed
+    if (isOnboarded && isPublicRoute) {
+      return NextResponse.redirect(new URL('/feed', request.url))
+    }
+    
+    // 4. Logged in + onboarded + trying to access Onboarding -> Send to Feed
+    if (isOnboarded && isOnboardingRoute) {
+        return NextResponse.redirect(new URL('/feed', request.url))
     }
   }
 
