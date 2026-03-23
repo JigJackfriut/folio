@@ -46,32 +46,11 @@ export function FeedList({ posts, crossedTags, loadingMore, hasMore, onLoadMore 
     )
   }
 
-  const primary    = posts.filter(p => p.signal !== 'unexpected')
-  const unexpected = posts.filter(p => p.signal === 'unexpected')
-
   return (
     <div className="px-4 pt-4 flex flex-col gap-3 pb-10">
-      {primary.map(post => (
+      {posts.map(post => (
         <PostCard key={post.id} post={post} crossedTags={crossedTags} />
       ))}
-
-      {unexpected.length > 0 && (
-        <>
-          <div className="flex items-center gap-3 py-3">
-            <div className="flex-1 h-px" style={{ background: '#2a1f42' }} />
-            <span
-              className="font-mono text-[10px] uppercase tracking-[0.14em]"
-              style={{ color: '#5a4b78' }}
-            >
-              different frequency
-            </span>
-            <div className="flex-1 h-px" style={{ background: '#2a1f42' }} />
-          </div>
-          {unexpected.map(post => (
-            <PostCard key={post.id} post={post} crossedTags={crossedTags} />
-          ))}
-        </>
-      )}
 
       <div ref={sentinelRef} className="h-4" />
 
