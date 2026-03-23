@@ -2,62 +2,54 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { getPostsForFeed } from '@/lib/queries/posts'
-import { getCurrentProfile, getProfileTags } from '@/lib/queries/profiles'
+import { getFeedPosts } from '@/lib/queries/posts'
 import { updateCrossedTags } from '@/lib/mutations/profiles'
-import { rankAndSignalPosts } from '@/lib/matching/score'
 import type { PostWithSignal } from '@/lib/types'
+
+const PAGE_SIZE = 50
 
 export function useFeed() {
   const [posts, setPosts] = useState<PostWithSignal[]>([])
   const [crossedTags, setCrossedTags] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [offset, setOffset] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
   const supabase = createClient()
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      const [profile, profileTags] = await Promise.all([
-        getCurrentProfile(supabase, user.id),
-        getProfileTags(supabase, user.id),
-      ])
-
-      if (!profile) throw new Error('Profile not found')
-
-      const saved = profile.crossed_tags ?? []
-      setCrossedTags(saved)
-
-      const publicTags = profileTags
-        .filter(t => t.tier === 'public')
-        .map(t => t.tag_name)
-
-      const echoTags = profileTags
-        .filter(t => t.tier === 'echo')
-        .map(t => t.tag_name)
-
-      const raw = await getPostsForFeed(supabase, user.id, saved)
-
-      const ranked = rankAndSignalPosts(raw, {
-        userId: user.id,
-        intentType: profile.intent_type,
-        connectionPref: profile.connection_pref ?? 'both',
-        publicTags,
-        echoTags,
-      })
-
-      setPosts(ranked)
+      const data = await getFeedPosts(supabase, user.id, PAGE_SIZE, 0)
+      setPosts(data)
+      setOffset(PAGE_SIZE)
+      setHasMore(data.length === PAGE_SIZE)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setLoading(false)
     }
   }, [])
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const data = await getFeedPosts(supabase, user.id, PAGE_SIZE, offset)
+      setPosts(prev => [...prev, ...data])
+      setOffset(prev => prev + PAGE_SIZE)
+      setHasMore(data.length === PAGE_SIZE)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [offset, loadingMore, hasMore])
 
   useEffect(() => { load() }, [load])
 
@@ -71,16 +63,25 @@ export function useFeed() {
 
     setCrossedTags(updated)
 
-    // Filter posts locally — instant UI update
+    // instant local filter
     setPosts(prev =>
       prev.filter(post =>
         !(post.tag_names ?? []).some(t => updated.includes(t))
       )
     )
 
-    // Persist to Supabase in background
     await updateCrossedTags(supabase, user.id, updated)
   }, [crossedTags])
 
-  return { posts, crossedTags, loading, error, refresh: load, toggleCrossedTag }
+  return {
+    posts,
+    crossedTags,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    refresh: load,
+    loadMore,
+    toggleCrossedTag,
+  }
 }
