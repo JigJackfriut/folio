@@ -20,7 +20,7 @@ export function ScreenLabel({ step }: { step: number }) {
     <div className="flex flex-col mb-9">
       <div className="flex items-center gap-3">
         <span
-          className="font-serif italic text-lg"
+          className="italic text-lg"
           style={{ color: '#d7a43b', fontFamily: 'EB Garamond, Georgia, serif' }}
         >
           Step {step}
@@ -43,8 +43,12 @@ export function ScreenLabel({ step }: { step: number }) {
 export function Heading({ children }: { children: React.ReactNode }) {
   return (
     <h1
-      className="leading-[1.2] mb-1.5"
-      style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '30px', color: '#f7f2ff' }}
+      className="leading-[1.08] mb-2 tracking-[-0.02em]"
+      style={{
+        fontFamily: 'EB Garamond, Georgia, serif',
+        fontSize: 'clamp(2rem, 3vw, 3.25rem)',
+        color: '#f7f2ff',
+      }}
     >
       {children}
     </h1>
@@ -54,8 +58,8 @@ export function Heading({ children }: { children: React.ReactNode }) {
 export function Sub({ children }: { children: React.ReactNode }) {
   return (
     <p
-      className="font-mono leading-relaxed mb-7"
-      style={{ fontSize: '11px', color: '#cbbfe8', letterSpacing: '0.02em' }}
+      className="font-sans leading-relaxed mb-7"
+      style={{ fontSize: '15px', color: '#cbbfe8' }}
     >
       {children}
     </p>
@@ -71,42 +75,85 @@ export function EditorialInput({
   hint?: string
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className="mb-7 group">
+    <div className="mb-7">
       {label && (
         <p
-          className="font-serif italic mb-1 transition-colors duration-200"
-          style={{ fontSize: '15px', color: '#b7abd6', fontFamily: 'EB Garamond, Georgia, serif' }}
+          className="mb-2 italic"
+          style={{
+            fontSize: '24px',
+            color: '#b7abd6',
+            fontFamily: 'EB Garamond, Georgia, serif',
+          }}
         >
           {label}
         </p>
       )}
+
       <input
         {...props}
-        className="w-full bg-transparent outline-none placeholder:opacity-40 transition-colors"
+        className="w-full bg-transparent outline-none placeholder:opacity-40 font-sans"
         style={{
           borderBottom: '1px solid #5b4c7d',
-          paddingBottom: '10px',
-          fontSize: '20px',
-          fontFamily: 'EB Garamond, Georgia, serif',
+          paddingBottom: '12px',
+          fontSize: '30px',
+          lineHeight: '1.2',
           color: '#f7f2ff',
         }}
-        onFocus={e => {
-          e.currentTarget.style.borderBottomColor = '#a88cff'
-          e.currentTarget.previousElementSibling?.setAttribute(
-            'style',
-            'font-size:15px;color:#d7a43b;font-family:EB Garamond,Georgia,serif;font-style:italic;margin-bottom:4px;transition:color 0.2s'
-          )
-        }}
-        onBlur={e => {
-          e.currentTarget.style.borderBottomColor = '#5b4c7d'
-          e.currentTarget.previousElementSibling?.setAttribute(
-            'style',
-            'font-size:15px;color:#b7abd6;font-family:EB Garamond,Georgia,serif;font-style:italic;margin-bottom:4px;transition:color 0.2s'
-          )
+      />
+
+      {hint && (
+        <p
+          className="font-mono text-[10px] uppercase mt-2"
+          style={{ color: '#978ab8', letterSpacing: '0.14em' }}
+        >
+          {hint}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export function EditorialTextarea({
+  label,
+  hint,
+  ...props
+}: {
+  label?: string
+  hint?: string
+} & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <div className="mb-7">
+      {label && (
+        <p
+          className="mb-2 italic"
+          style={{
+            fontSize: '24px',
+            color: '#b7abd6',
+            fontFamily: 'EB Garamond, Georgia, serif',
+          }}
+        >
+          {label}
+        </p>
+      )}
+
+      <textarea
+        {...props}
+        className="w-full bg-transparent outline-none resize-none placeholder:opacity-40 font-sans"
+        style={{
+          borderBottom: '1px solid #5b4c7d',
+          paddingBottom: '12px',
+          minHeight: '140px',
+          fontSize: '24px',
+          lineHeight: '1.45',
+          color: '#f7f2ff',
         }}
       />
+
       {hint && (
-        <p className="font-mono text-[9px] uppercase tracking-wider mt-1.5" style={{ color: '#978ab8' }}>
+        <p
+          className="font-mono text-[10px] uppercase mt-2"
+          style={{ color: '#978ab8', letterSpacing: '0.14em' }}
+        >
           {hint}
         </p>
       )}
@@ -133,7 +180,7 @@ export function OptionCard({
       onClick={onClick}
       className="w-full text-left rounded-2xl mb-3 transition-all duration-150 flex items-center gap-4 hover:translate-y-[-1px]"
       style={{
-        padding: '15px 16px',
+        padding: '16px 18px',
         border: `1px solid ${selected ? '#a88cff' : '#5b4c7d'}`,
         background: selected ? 'rgba(74, 53, 118, 0.92)' : 'rgba(44, 31, 70, 0.9)',
         boxShadow: selected ? '0 0 0 1px rgba(168,140,255,0.18)' : 'none',
@@ -153,17 +200,22 @@ export function OptionCard({
           {icon}
         </span>
       )}
+
       <div className="flex-1">
         <p
-          className="text-[15px] font-medium mb-1 transition-colors"
+          className="font-sans text-[17px] font-medium mb-1"
           style={{ color: selected ? '#f7f2ff' : '#eee7ff' }}
         >
           {title}
         </p>
-        <p className="text-[12px] leading-relaxed" style={{ color: selected ? '#ddd2fb' : '#c6b8e8' }}>
+        <p
+          className="font-sans text-[14px] leading-relaxed"
+          style={{ color: selected ? '#ddd2fb' : '#c6b8e8' }}
+        >
           {description}
         </p>
       </div>
+
       <div
         className="flex-shrink-0 rounded-full transition-all flex items-center justify-center"
         style={{
@@ -192,10 +244,10 @@ export function Chip({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-xl border transition-all duration-150"
+      className="rounded-xl border transition-all duration-150 font-sans"
       style={{
-        padding: '8px 13px',
-        fontSize: '12px',
+        padding: '10px 14px',
+        fontSize: '14px',
         borderColor: selected ? '#a88cff' : '#5b4c7d',
         background: selected ? 'rgba(74, 53, 118, 0.9)' : 'rgba(44, 31, 70, 0.55)',
         color: selected ? '#f7f2ff' : '#d3c7ef',
@@ -221,11 +273,11 @@ export function Toggle({
   return (
     <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #3c2f5d' }}>
       <div className="flex-1 pr-4">
-        <p className="text-[13px]" style={{ color: '#efe7ff' }}>
+        <p className="font-sans text-[15px]" style={{ color: '#efe7ff' }}>
           {label}
         </p>
         {hint && (
-          <p className="text-[11px] mt-0.5" style={{ color: '#c1b4df' }}>
+          <p className="font-sans text-[13px] mt-1" style={{ color: '#c1b4df' }}>
             {hint}
           </p>
         )}
@@ -258,7 +310,7 @@ export function FilterRow({
 }) {
   return (
     <div className="py-4" style={{ borderBottom: '1px solid #3c2f5d' }}>
-      <p className="font-medium mb-3" style={{ color: '#ddd2fb', fontSize: '13px' }}>
+      <p className="font-sans font-medium mb-3" style={{ color: '#ddd2fb', fontSize: '15px' }}>
         {question}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -267,8 +319,9 @@ export function FilterRow({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className="px-4 py-1.5 rounded-full text-[12px] border transition-all duration-150"
+            className="px-4 py-2 rounded-full border transition-all duration-150 font-sans"
             style={{
+              fontSize: '14px',
               borderColor: value === opt.value ? '#a88cff' : '#5b4c7d',
               background: value === opt.value ? 'rgba(74, 53, 118, 0.88)' : 'rgba(44, 31, 70, 0.45)',
               color: value === opt.value ? '#f7f2ff' : '#d3c7ef',
@@ -346,6 +399,7 @@ export function NavBar({
       >
         ← back
       </button>
+
       <div className="flex items-center gap-5">
         {skipVisible && (
           <button
@@ -357,6 +411,7 @@ export function NavBar({
             skip
           </button>
         )}
+
         <button
           type="button"
           onClick={onNext}
