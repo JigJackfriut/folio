@@ -131,18 +131,14 @@ export default function LoginPage() {
 
         if (logErr) throw new Error('Invalid login credentials.')
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('onboarding_complete')
-          .eq('id', signInData.user.id)
-          .single()
+const isOnboarded =
+  signInData.user.user_metadata?.onboarding_complete === true
 
-        if (profile?.onboarding_complete) {
-          router.push('/feed')
-        } else {
-          router.push('/onboarding')
-        }
-      }
+if (isOnboarded) {
+  router.push('/feed')
+} else {
+  router.push('/onboarding')
+}
 
       router.refresh()
     } catch (err: any) {
