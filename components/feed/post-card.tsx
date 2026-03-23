@@ -34,24 +34,23 @@ export function PostCard({ post, crossedTags }: Props) {
       <div
         className="rounded-2xl transition-colors duration-150"
         style={{
-          background: '#241936',
+          background: '#1e1530',
           border: '1px solid #2e2040',
-          padding: '16px',
-          cursor: 'pointer',
+          padding: '20px',
         }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#4a3b6a' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#2e2040' }}
       >
-        {/* Top row — signal + time */}
-        <div className="flex items-start justify-between mb-3">
+        {/* Signal + time */}
+        <div className="flex items-center justify-between mb-4">
           <SignalLabel
             signal={post.signal}
             reason={post.signal_reason}
             echoCount={post.echo_count}
           />
           <span
-            className="font-mono text-[9px] flex-shrink-0 ml-2"
-            style={{ color: '#3a2b58', letterSpacing: '0.04em' }}
+            className="font-mono text-[10px]"
+            style={{ color: '#4a3b68', letterSpacing: '0.04em' }}
           >
             {timeAgo(post.created_at)}
           </span>
@@ -59,32 +58,34 @@ export function PostCard({ post, crossedTags }: Props) {
 
         {/* Handle */}
         <p
-          className="font-mono text-[10px] mb-2"
-          style={{ color: '#5a4b78', letterSpacing: '0.04em' }}
+          className="font-mono text-[11px] mb-3"
+          style={{ color: '#7a6b9a', letterSpacing: '0.04em' }}
         >
-          {post.author.handle}
+          {post.author.handle || `w/${post.author.display_name?.toLowerCase().replace(/\s/g, '')}`}
         </p>
 
-        {/* Headline */}
+        {/* Headline — high contrast */}
         <p
           className="leading-snug mb-3"
           style={{
             fontFamily: 'EB Garamond, Georgia, serif',
             fontStyle: 'italic',
-            fontSize: '17px',
+            fontSize: '20px',
             color: '#f0eaff',
+            lineHeight: 1.45,
           }}
         >
           {post.headline}
         </p>
 
-        {/* Body preview */}
+        {/* Body — readable contrast */}
         <p
-          className="leading-relaxed mb-3"
+          className="leading-relaxed mb-4"
           style={{
             fontFamily: 'EB Garamond, Georgia, serif',
-            fontSize: '13px',
-            color: '#7060a0',
+            fontSize: '15px',
+            color: '#b8a8d0',
+            lineHeight: 1.7,
             display: '-webkit-box',
             WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical' as const,
@@ -96,18 +97,18 @@ export function PostCard({ post, crossedTags }: Props) {
 
         {/* Tags */}
         {post.tag_names.length > 0 && (
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
             {post.tag_names.map(tag => {
               const isMatched = post.matched_tags.includes(tag)
               const isCrossed = crossedTags.includes(tag)
               return (
                 <span
                   key={tag}
-                  className="font-mono text-[9px] rounded-full px-2 py-0.5"
+                  className="font-mono text-[10px] rounded-full px-2.5 py-1"
                   style={{
-                    border: `1px solid ${isMatched ? 'rgba(109,75,195,0.4)' : '#2e2040'}`,
-                    background: isMatched ? 'rgba(109,75,195,0.08)' : 'transparent',
-                    color: isCrossed ? '#3a2b58' : isMatched ? '#9b85e8' : '#4a3b68',
+                    border: `1px solid ${isMatched ? 'rgba(155,133,232,0.5)' : '#2e2040'}`,
+                    background: isMatched ? 'rgba(109,75,195,0.12)' : 'transparent',
+                    color: isCrossed ? '#3a2b58' : isMatched ? '#c3b3ff' : '#6a5a88',
                     textDecoration: isCrossed ? 'line-through' : 'none',
                   }}
                 >
