@@ -43,12 +43,12 @@ export function BasicsScreen() {
         </div>
       </div>
 
-      <p
-        className="font-serif italic mb-3"
-        style={{ fontSize: '15px', color: '#7a6b9a', fontFamily: 'EB Garamond, Georgia, serif' }}
-      >
-        I identify as...
-      </p>
+     <p
+  className="font-sans mb-3"
+  style={{ fontSize: '15px', color: '#ddd2fb', fontWeight: 500 }}
+>
+  I identify as...
+</p>
       <div className="flex flex-wrap gap-2">
         {GENDERS.map(g => (
           <Chip key={g} label={g} selected={state.gender_identity.includes(g)} onClick={() => toggle(g)} />
