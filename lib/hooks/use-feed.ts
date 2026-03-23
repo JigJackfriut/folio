@@ -27,7 +27,7 @@ export function useFeed() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      const [{ data: profile }, feedData] = await Promise.all([
+      const [{ data: profile }, data] = await Promise.all([
         supabase
           .from('profiles')
           .select('crossed_tags')
@@ -37,9 +37,9 @@ export function useFeed() {
       ])
 
       setCrossedTags(profile?.crossed_tags ?? [])
-      setAllPosts(feedData)
+      setAllPosts(data)
       setOffset(PAGE_SIZE)
-      setHasMore(feedData.length === PAGE_SIZE)
+      setHasMore(data.length === PAGE_SIZE)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -71,9 +71,10 @@ export function useFeed() {
   }, [load])
 
   const toggleCrossedTag = useCallback(async (tag: string) => {
-    const updated = crossedTags.includes(tag)
-      ? crossedTags.filter(t => t !== tag)
-      : [...crossedTags, tag]
+    const previous = crossedTags
+    const updated = previous.includes(tag)
+      ? previous.filter(t => t !== tag)
+      : [...previous, tag]
 
     setCrossedTags(updated)
 
@@ -82,14 +83,15 @@ export function useFeed() {
       if (!user) throw new Error('Not authenticated')
 
       await updateCrossedTags(supabase, user.id, updated)
-    } catch (err) {
-      setCrossedTags(crossedTags)
-      setError(err instanceof Error ? err.message : 'Failed to save filter')
+    } catch (err: unknown) {
+      setCrossedTags(previous)
+      setError(err instanceof Error ? err.message : 'Failed to save filters')
     }
   }, [supabase, crossedTags])
 
   const posts = useMemo(() => {
     if (crossedTags.length === 0) return allPosts
+
     return allPosts.filter(post =>
       !(post.tag_names ?? []).some(tag => crossedTags.includes(tag))
     )
