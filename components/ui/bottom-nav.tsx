@@ -54,33 +54,39 @@ export function BottomNav() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
+      className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        background: 'rgba(27,19,40,0.92)',
+        background: 'rgba(27,19,40,0.95)',
         backdropFilter: 'blur(12px)',
         borderTop: '1px solid #2a1f42',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        height: '64px',
       }}
     >
-      {NAV.map(item => {
-        const active = pathname.startsWith(item.href)
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex flex-col items-center gap-1"
-          >
-            {item.icon(active)}
-            <span
-              className="font-mono text-[9px] uppercase tracking-widest"
-              style={{ color: active ? '#c8922a' : '#4a3b68' }}
+      <div
+        className="w-full max-w-xl mx-auto flex items-center justify-around"
+        style={{
+          height: '64px',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        {NAV.map(item => {
+          const active = pathname.startsWith(item.href)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex flex-col items-center gap-1 px-4"
             >
-              {item.label}
-            </span>
-          </Link>
-        )
-      })}
+              {item.icon(active)}
+              <span
+                className="font-mono text-[9px] uppercase tracking-widest"
+                style={{ color: active ? '#c8922a' : '#4a3b68' }}
+              >
+                {item.label}
+              </span>
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }
