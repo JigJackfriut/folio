@@ -9,13 +9,15 @@ export function PreviewScreen() {
   const publicTags = state.tags.filter(t => t.tier === 'public').slice(0, 5)
   const sharedCount = state.tags.filter(t => t.tier === 'shared').length
   const filterCount = state.tags.filter(t => t.tier === 'filter').length
-  const location = state.match_base === 'college'
-    ? state.college_name
-    : state.location_raw
-      ? state.hide_exact_location
-        ? state.location_raw.split(',')[0]?.trim() ?? state.location_raw
-        : state.location_raw
-      : null
+
+  const location =
+    state.match_base === 'college'
+      ? state.college_name
+      : state.location_raw
+        ? state.hide_exact_location
+          ? state.location_raw.split(',')[0]?.trim() ?? state.location_raw
+          : state.location_raw
+        : null
 
   return (
     <>
@@ -23,52 +25,95 @@ export function PreviewScreen() {
       <Sub>edit anytime from your profile</Sub>
 
       <div
-        className="rounded-2xl p-5 mb-4"
-        style={{ border: '1px solid #3a2b58', background: 'rgba(30,21,48,0.6)' }}
+        className="rounded-2xl p-6 mb-4"
+        style={{
+          border: '1px solid #5b4c7d',
+          background: 'rgba(44, 31, 70, 0.9)',
+        }}
       >
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          {state.age && <span className="font-mono text-[11px]" style={{ color: '#5a4b78' }}>{state.age}</span>}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {state.age && (
+            <span
+              className="font-mono text-[11px] uppercase tracking-[0.12em]"
+              style={{ color: '#b7abd6' }}
+            >
+              {state.age}
+            </span>
+          )}
+
           {location && (
             <>
-              <span style={{ color: '#3a2b58', fontSize: '8px' }}>·</span>
-              <span className="font-mono text-[11px]" style={{ color: '#5a4b78' }}>{location}</span>
+              <span style={{ color: '#6c5a94', fontSize: '10px' }}>•</span>
+              <span
+                className="font-mono text-[11px] uppercase tracking-[0.12em]"
+                style={{ color: '#b7abd6' }}
+              >
+                {location}
+              </span>
             </>
           )}
+
           {state.open_to_distance && (
             <>
-              <span style={{ color: '#3a2b58', fontSize: '8px' }}>·</span>
-              <span className="font-mono text-[11px]" style={{ color: '#5a4b78' }}>open to online</span>
+              <span style={{ color: '#6c5a94', fontSize: '10px' }}>•</span>
+              <span
+                className="font-mono text-[11px] uppercase tracking-[0.12em]"
+                style={{ color: '#b7abd6' }}
+              >
+                open to online
+              </span>
             </>
           )}
         </div>
 
         <p
-          className="leading-snug mb-3"
-          style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '19px', color: state.post_headline ? '#f5efff' : '#3a2b58' }}
+          className="leading-tight mb-3"
+          style={{
+            fontFamily: 'EB Garamond, Georgia, serif',
+            fontSize: '32px',
+            color: state.post_headline ? '#f7f2ff' : '#8f7bb8',
+          }}
         >
           {state.post_headline || 'your headline will appear here'}
         </p>
 
-        <p className="leading-relaxed mb-4 text-[13px]" style={{ color: state.post_body ? '#a99abb' : '#3a2b58' }}>
+        <p
+          className="font-sans leading-relaxed mb-5"
+          style={{
+            fontSize: '15px',
+            color: state.post_body ? '#ddd2fb' : '#9d8fc3',
+          }}
+        >
           {state.post_body
-            ? state.post_body.slice(0, 200) + (state.post_body.length > 200 ? '…' : '')
+            ? state.post_body.slice(0, 220) + (state.post_body.length > 220 ? '…' : '')
             : 'your post will appear here'}
         </p>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {publicTags.map(({ name }) => (
             <span
               key={name}
-              className="px-2.5 py-1 rounded-full text-[11px] border"
-              style={{ borderColor: '#3a2b58', background: 'rgba(42,31,66,0.8)', color: '#a99abb' }}
+              className="px-3 py-1.5 rounded-full border font-sans"
+              style={{
+                fontSize: '13px',
+                borderColor: '#5b4c7d',
+                background: 'rgba(74, 53, 118, 0.5)',
+                color: '#eee7ff',
+              }}
             >
               {name}
             </span>
           ))}
+
           {sharedCount > 0 && (
             <span
-              className="px-2.5 py-1 rounded-full text-[11px] border italic"
-              style={{ borderColor: '#7F77DD', background: 'rgba(238,237,254,0.05)', color: '#c3b3ff' }}
+              className="px-3 py-1.5 rounded-full border font-sans"
+              style={{
+                fontSize: '13px',
+                borderColor: '#a88cff',
+                background: 'rgba(168, 140, 255, 0.08)',
+                color: '#d9ccff',
+              }}
             >
               + {sharedCount} thing{sharedCount > 1 ? 's' : ''} in common
             </span>
@@ -76,18 +121,35 @@ export function PreviewScreen() {
         </div>
       </div>
 
-      <div className="rounded-xl p-4 text-[12px] leading-relaxed space-y-2" style={{ background: 'rgba(30,21,48,0.4)', border: '1px solid #2a1f42' }}>
-        <p style={{ color: '#7a6b9a' }}>
-          <span style={{ color: '#a99abb' }}>◎ {publicTags.length} public</span> — visible to everyone
+      <div
+        className="rounded-xl p-4 space-y-2"
+        style={{
+          background: 'rgba(44, 31, 70, 0.55)',
+          border: '1px solid #5b4c7d',
+        }}
+      >
+        <p className="font-sans text-[14px] leading-relaxed" style={{ color: '#cbbfe8' }}>
+          <span style={{ color: '#eee7ff', fontWeight: 600 }}>
+            ◎ {publicTags.length} public
+          </span>{' '}
+          — visible to everyone
         </p>
+
         {sharedCount > 0 && (
-          <p style={{ color: '#7a6b9a' }}>
-            <span style={{ color: '#c3b3ff' }}>⬡ {sharedCount} matched</span> — revealed only when a match shares them
+          <p className="font-sans text-[14px] leading-relaxed" style={{ color: '#cbbfe8' }}>
+            <span style={{ color: '#d9ccff', fontWeight: 600 }}>
+              ⬡ {sharedCount} matched
+            </span>{' '}
+            — revealed only when someone shares them too
           </p>
         )}
+
         {filterCount > 0 && (
-          <p style={{ color: '#7a6b9a' }}>
-            <span style={{ color: '#5DCAA5' }}>▿ {filterCount} filter</span> — invisible to everyone, quietly removes bad fits
+          <p className="font-sans text-[14px] leading-relaxed" style={{ color: '#cbbfe8' }}>
+            <span style={{ color: '#b8efd8', fontWeight: 600 }}>
+              ▿ {filterCount} filter
+            </span>{' '}
+            — invisible to everyone, quietly filters out bad fits
           </p>
         )}
       </div>
