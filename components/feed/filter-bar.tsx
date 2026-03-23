@@ -27,7 +27,7 @@ export function FilterBar({ posts, crossedTags, onToggle }: Props) {
 
   return (
     <div
-      className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide"
+      className="flex gap-2 overflow-x-auto px-5 py-3 scrollbar-hide"
       style={{ borderBottom: '1px solid #2a1f42' }}
     >
       {allTags.map(tag => {
@@ -37,16 +37,16 @@ export function FilterBar({ posts, crossedTags, onToggle }: Props) {
             key={tag}
             type="button"
             onClick={() => onToggle(tag)}
-            className="flex-shrink-0 font-mono transition-all"
+            className="flex-shrink-0 font-mono transition-all duration-150"
             style={{
-              fontSize: '10px',
-              padding: '3px 10px',
+              fontSize: '11px',
+              padding: '4px 12px',
               borderRadius: '20px',
-              border: `1px solid ${crossed ? '#5a2a2a' : '#3a2b58'}`,
-              background: crossed ? 'rgba(90,42,42,0.2)' : 'transparent',
-              color: crossed ? '#7a4040' : '#5a4b78',
+              border: `1px solid ${crossed ? '#7a3030' : '#3a2b58'}`,
+              background: crossed ? 'rgba(120,48,48,0.25)' : 'rgba(58,43,88,0.3)',
+              color: crossed ? '#f87171' : '#a090c0',
               textDecoration: crossed ? 'line-through' : 'none',
-              letterSpacing: '0.04em',
+              letterSpacing: '0.03em',
               cursor: 'pointer',
             }}
           >
