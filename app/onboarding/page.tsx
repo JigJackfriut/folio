@@ -104,6 +104,11 @@ const canNext: Record<number, boolean> = {
         onboarding_complete: true,
       })
       if (profileErr) throw profileErr
+      const { error: authErr } = await supabase.auth.updateUser({
+  data: { onboarding_complete: true }
+})
+
+if (authErr) throw authErr
 
       const { data: post, error: postErr } = await supabase
         .from('posts')
