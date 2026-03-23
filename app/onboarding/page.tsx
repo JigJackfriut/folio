@@ -218,12 +218,12 @@ const screens: Record<number, React.ReactNode> = {
               >
                 {heading.title}
               </h1>
-              <p
-                className="font-mono mt-4"
-                style={{ fontSize: '11px', color: '#5a4b78', letterSpacing: '0.06em' }}
-              >
-                {heading.sub}
-              </p>
+             <p
+  className="font-sans mt-4"
+  style={{ fontSize: '15px', color: '#cbbfe8', lineHeight: 1.6 }}
+>
+  {heading.sub}
+</p>
             </div>
             <div className="mt-auto pt-16">
               <p className="font-mono" style={{ fontSize: '10px', color: '#3a2b58', letterSpacing: '0.1em' }}>
