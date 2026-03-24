@@ -44,13 +44,13 @@ export default function FeedPage() {
 }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                stroke={activeFilters > 0 ? '#9b85e8' : '#5a4b78'} strokeWidth="2">
+                stroke={activeFilters > 0 ? '#c3b3ff' : '#a090c0'} strokeWidth="2">
                 <line x1="4" y1="6" x2="20" y2="6"/>
                 <line x1="8" y1="12" x2="16" y2="12"/>
                 <line x1="11" y1="18" x2="13" y2="18"/>
               </svg>
               <span className="font-mono text-[10px] uppercase tracking-widest"
-                style={{ color: activeFilters > 0 ? '#9b85e8' : '#5a4b78' }}>
+                style={{ color: activeFilters > 0 ? '#c3b3ff' : '#a090c0' }}>
                 {activeFilters > 0 ? `${activeFilters} active` : 'filter'}
               </span>
             </button>
