@@ -39,6 +39,63 @@ export default function InboxPage() {
     load()
   }, [])
 
+  // Real-time — update inbox when new threads or messages arrive
+  useEffect(() => {
+    if (!userId) return
+
+    const threadChannel = supabase
+      .channel('inbox-threads')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'threads',
+        filter: `recipient_id=eq.${userId}`,
+      }, async () => {
+        const data = await getInboxData(supabase, userId)
+        setThreads(data)
+      })
+      .subscribe()
+
+    const msgChannel = supabase
+      .channel('inbox-messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+      }, async payload => {
+        // Update last message in the relevant thread
+        setThreads(prev => prev.map(t => {
+          if (t.id !== payload.new.thread_id) return t
+          const already = t.messages?.some((m: any) => m.id === payload.new.id)
+          if (already) return t
+          return {
+            ...t,
+            messages: [...(t.messages ?? []), payload.new],
+          }
+        }))
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(threadChannel)
+      supabase.removeChannel(msgChannel)
+    }
+  }, [userId])
+
+  const isThreadUnread = (thread: any) => {
+    if (!userId) return false
+    const lastMsg = thread.messages?.[thread.messages.length - 1]
+    if (!lastMsg) return false
+    // If last message is from the other person, it's unread
+    if (lastMsg.sender_id === userId) return false
+    const isInitiator = thread.initiator_id === userId
+    const myLastRead = isInitiator
+      ? thread.initiator_read_at
+      : thread.recipient_read_at
+    if (!myLastRead) return true
+    return new Date(lastMsg.created_at) > new Date(myLastRead)
+  }
+
   const incomingPending = threads.filter(t =>
     t.status === 'pending' && t.recipient_id === userId
   )
@@ -86,9 +143,25 @@ export default function InboxPage() {
 
         {/* Header */}
         <div className="px-5 pt-14 pb-4" style={{ borderBottom: '1px solid #2a1f42' }}>
-          <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '30px', color: '#f0eaff' }}>
-            inbox
-          </p>
+          <div className="flex items-center gap-3">
+            <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '30px', color: '#f0eaff' }}>
+              inbox
+            </p>
+            {incomingPending.length > 0 && (
+              <div
+                style={{
+                  background: '#c8922a',
+                  borderRadius: '20px',
+                  padding: '2px 8px',
+                  marginTop: '4px',
+                }}
+              >
+                <span className="font-mono" style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>
+                  {incomingPending.length} new
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {totalCount === 0 && (
@@ -118,22 +191,35 @@ export default function InboxPage() {
                   <div
                     key={thread.id}
                     className="rounded-2xl overflow-hidden"
-                    style={{ background: '#1e1530', border: '1px solid #2e2040' }}
+                    style={{
+                      background: '#1e1530',
+                      border: '1px solid #6d4bc3',
+                    }}
                   >
                     <div className="px-5 pt-5 pb-4">
                       <div className="flex items-center justify-between mb-3">
-                        <span
-                          className="font-mono text-[10px] rounded-full"
-                          style={{
-                            padding: '3px 10px',
-                            background: 'rgba(109,75,195,0.15)',
-                            border: '1px solid rgba(109,75,195,0.3)',
-                            color: '#c3b3ff',
-                            letterSpacing: '0.06em',
-                          }}
-                        >
-                          someone replied
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {/* Unread dot */}
+                          <div style={{
+                            width: '7px',
+                            height: '7px',
+                            borderRadius: '50%',
+                            background: '#c8922a',
+                            flexShrink: 0,
+                          }} />
+                          <span
+                            className="font-mono text-[10px] rounded-full"
+                            style={{
+                              padding: '3px 10px',
+                              background: 'rgba(109,75,195,0.15)',
+                              border: '1px solid rgba(109,75,195,0.3)',
+                              color: '#c3b3ff',
+                              letterSpacing: '0.06em',
+                            }}
+                          >
+                            someone replied
+                          </span>
+                        </div>
                         <span className="font-mono text-[10px]" style={{ color: '#9b85e8' }}>
                           {timeAgo(thread.created_at)}
                         </span>
@@ -362,6 +448,7 @@ export default function InboxPage() {
                 const otherPerson = thread.initiator_id === userId
                   ? thread.recipient
                   : thread.initiator
+                const unread = isThreadUnread(thread)
 
                 return (
                   <button
@@ -370,19 +457,33 @@ export default function InboxPage() {
                     onClick={() => router.push(`/thread/${thread.id}`)}
                     className="rounded-2xl text-left w-full"
                     style={{
-                      background: '#1e1530',
-                      border: '1px solid #2e2040',
+                      background: unread ? '#1e1a2e' : '#1e1530',
+                      border: `1px solid ${unread ? '#4a3b6a' : '#2e2040'}`,
                       padding: '16px 20px',
                       cursor: 'pointer',
                       transition: 'border-color 0.15s',
                     }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = '#6d4bc3' }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#2e2040' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = unread ? '#4a3b6a' : '#2e2040' }}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono text-[11px]" style={{ color: '#c3b3ff' }}>
-                        {otherPerson?.handle || otherPerson?.display_name || 'someone'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {unread && (
+                          <div style={{
+                            width: '7px',
+                            height: '7px',
+                            borderRadius: '50%',
+                            background: '#c8922a',
+                            flexShrink: 0,
+                          }} />
+                        )}
+                        <span
+                          className="font-mono text-[11px]"
+                          style={{ color: unread ? '#f0eaff' : '#c3b3ff', fontWeight: unread ? 700 : 400 }}
+                        >
+                          {otherPerson?.handle || otherPerson?.display_name || 'someone'}
+                        </span>
+                      </div>
                       {lastMsg && (
                         <span className="font-mono text-[10px]" style={{ color: '#9b85e8' }}>
                           {timeAgo(lastMsg.created_at)}
@@ -393,7 +494,7 @@ export default function InboxPage() {
                       <p style={{
                         fontFamily: serif,
                         fontSize: '15px',
-                        color: '#c8b8e8',
+                        color: unread ? '#e0d0f8' : '#c8b8e8',
                         lineHeight: 1.5,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
