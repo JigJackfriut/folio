@@ -15,6 +15,8 @@ function timeAgo(date: string): string {
   return `${Math.floor(days / 7)}w ago`
 }
 
+const serif = 'EB Garamond, Georgia, serif'
+
 export default function InboxPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -37,18 +39,14 @@ export default function InboxPage() {
     load()
   }, [])
 
-  // Threads where someone replied to your post — you decide
   const incomingPending = threads.filter(t =>
     t.status === 'pending' && t.recipient_id === userId
   )
-
-  // Threads where you replied — waiting for them
   const outgoingPending = threads.filter(t =>
     t.status === 'pending' && t.initiator_id === userId
   )
-
-  // Active conversations — both sides
   const open = threads.filter(t => t.status === 'open')
+  const totalCount = incomingPending.length + outgoingPending.length + open.length
 
   const handleAccept = async (threadId: string) => {
     setActing(threadId)
@@ -73,8 +71,6 @@ export default function InboxPage() {
     }
   }
 
-  const totalCount = incomingPending.length + outgoingPending.length + open.length
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -89,35 +85,18 @@ export default function InboxPage() {
       <div className="w-full max-w-xl mx-auto">
 
         {/* Header */}
-        <div
-          className="px-5 pt-14 pb-4"
-          style={{ borderBottom: '1px solid #2a1f42' }}
-        >
-          <p style={{
-            fontFamily: 'EB Garamond, Georgia, serif',
-            fontStyle: 'italic',
-            fontSize: '30px',
-            color: '#f0eaff',
-          }}>
+        <div className="px-5 pt-14 pb-4" style={{ borderBottom: '1px solid #2a1f42' }}>
+          <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '30px', color: '#f0eaff' }}>
             inbox
           </p>
         </div>
 
         {totalCount === 0 && (
           <div className="flex flex-col items-center justify-center py-32 px-8 text-center">
-            <p style={{
-              fontFamily: 'EB Garamond, Georgia, serif',
-              fontStyle: 'italic',
-              fontSize: '20px',
-              color: '#5a4b78',
-              marginBottom: '8px',
-            }}>
+            <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '20px', color: '#7a6b9a', marginBottom: '8px' }}>
               nothing yet.
             </p>
-            <p
-              className="font-mono text-[10px] uppercase tracking-widest"
-              style={{ color: '#3a2b58' }}
-            >
+            <p className="font-mono text-[11px] uppercase tracking-widest" style={{ color: '#5a4b78' }}>
               replies to your post will appear here
             </p>
           </div>
@@ -125,11 +104,8 @@ export default function InboxPage() {
 
         {/* Incoming — someone replied to you */}
         {incomingPending.length > 0 && (
-          <div className="pt-5">
-            <p
-              className="font-mono text-[9px] uppercase tracking-[0.14em] px-5 mb-3"
-              style={{ color: '#5a4b78' }}
-            >
+          <div className="pt-6">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] px-5 mb-3" style={{ color: '#7a6b9a' }}>
               reply requests — {incomingPending.length}
             </p>
             <div className="flex flex-col gap-3 px-4">
@@ -146,25 +122,22 @@ export default function InboxPage() {
                   >
                     <div className="px-5 pt-5 pb-4">
                       <div className="flex items-center justify-between mb-3">
-                        <span
-                          className="font-mono text-[10px] uppercase tracking-widest"
-                          style={{ color: '#5a4b78' }}
-                        >
+                        <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#6a5a88' }}>
                           anonymous
                         </span>
-                        <span className="font-mono text-[10px]" style={{ color: '#3a2b58' }}>
+                        <span className="font-mono text-[10px]" style={{ color: '#5a4b78' }}>
                           {timeAgo(thread.created_at)}
                         </span>
                       </div>
 
                       {firstMsg && (
                         <p style={{
-                          fontFamily: 'EB Garamond, Georgia, serif',
+                          fontFamily: serif,
                           fontStyle: 'italic',
-                          fontSize: '17px',
-                          color: '#e0d0f8',
+                          fontSize: '18px',
+                          color: '#e8d8ff',
                           lineHeight: 1.6,
-                          marginBottom: '14px',
+                          marginBottom: '16px',
                         }}>
                           "{firstMsg.content}"
                         </p>
@@ -173,9 +146,9 @@ export default function InboxPage() {
                       <button
                         type="button"
                         onClick={() => setExpandedPost(isExpanded ? null : thread.id)}
-                        className="font-mono text-[10px] uppercase tracking-widest flex items-center gap-1.5"
+                        className="font-mono text-[10px] uppercase tracking-widest flex items-center gap-2"
                         style={{
-                          color: isExpanded ? '#9b85e8' : '#5a4b78',
+                          color: isExpanded ? '#c3b3ff' : '#8a7aaa',
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
@@ -191,14 +164,13 @@ export default function InboxPage() {
                       </button>
                     </div>
 
-                    {/* Their post expanded */}
                     {isExpanded && senderPost && (
                       <div
                         className="px-5 py-4 mx-4 mb-4 rounded-xl"
                         style={{ background: '#160f24', border: '1px solid #2a1f42' }}
                       >
                         <p style={{
-                          fontFamily: 'EB Garamond, Georgia, serif',
+                          fontFamily: serif,
                           fontStyle: 'italic',
                           fontSize: '17px',
                           color: '#f0eaff',
@@ -208,9 +180,9 @@ export default function InboxPage() {
                           {senderPost.headline}
                         </p>
                         <p style={{
-                          fontFamily: 'EB Garamond, Georgia, serif',
+                          fontFamily: serif,
                           fontSize: '14px',
-                          color: '#9080b0',
+                          color: '#a090c0',
                           lineHeight: 1.7,
                           marginBottom: '12px',
                           display: '-webkit-box',
@@ -226,7 +198,7 @@ export default function InboxPage() {
                               <span
                                 key={tag}
                                 className="font-mono text-[9px] rounded-full px-2 py-0.5"
-                                style={{ border: '1px solid #2a1f42', color: '#5a4b78' }}
+                                style={{ border: '1px solid #2a1f42', color: '#6a5a88' }}
                               >
                                 {tag}
                               </span>
@@ -236,7 +208,6 @@ export default function InboxPage() {
                       </div>
                     )}
 
-                    {/* Actions */}
                     <div className="flex gap-2 px-5 pb-5">
                       <button
                         type="button"
@@ -244,10 +215,10 @@ export default function InboxPage() {
                         disabled={acting === thread.id}
                         className="font-mono text-[10px] uppercase tracking-widest rounded-full"
                         style={{
-                          padding: '8px 18px',
+                          padding: '9px 18px',
                           background: 'transparent',
                           border: '1px solid #3a2b58',
-                          color: '#5a4b78',
+                          color: '#8a7aaa',
                           cursor: 'pointer',
                         }}
                       >
@@ -259,11 +230,12 @@ export default function InboxPage() {
                         disabled={acting === thread.id}
                         className="font-mono text-[10px] uppercase tracking-widest rounded-full flex-1"
                         style={{
-                          padding: '8px 18px',
+                          padding: '9px 18px',
                           background: '#6d4bc3',
                           border: 'none',
-                          color: '#fff',
+                          color: '#ffffff',
                           cursor: 'pointer',
+                          fontWeight: 700,
                         }}
                       >
                         {acting === thread.id ? 'opening...' : 'open thread →'}
@@ -279,10 +251,7 @@ export default function InboxPage() {
         {/* Outgoing — you replied, waiting */}
         {outgoingPending.length > 0 && (
           <div className="pt-6">
-            <p
-              className="font-mono text-[9px] uppercase tracking-[0.14em] px-5 mb-3"
-              style={{ color: '#5a4b78' }}
-            >
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] px-5 mb-3" style={{ color: '#7a6b9a' }}>
               waiting for reply — {outgoingPending.length}
             </p>
             <div className="flex flex-col gap-3 px-4">
@@ -294,31 +263,23 @@ export default function InboxPage() {
                   <div
                     key={thread.id}
                     className="rounded-2xl"
-                    style={{
-                      background: '#1a1530',
-                      border: '1px solid #2a1f42',
-                      padding: '16px 20px',
-                    }}
+                    style={{ background: '#1a1530', border: '1px solid #2a1f42', padding: '18px 20px' }}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span
-                        className="font-mono text-[10px] uppercase tracking-widest"
-                        style={{ color: '#4a3b68' }}
-                      >
+                      <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#6a5a88' }}>
                         you replied
                       </span>
-                      <span className="font-mono text-[10px]" style={{ color: '#3a2b58' }}>
+                      <span className="font-mono text-[10px]" style={{ color: '#5a4b78' }}>
                         {timeAgo(thread.created_at)}
                       </span>
                     </div>
 
-                    {/* Their post headline */}
                     {theirPost && (
                       <p style={{
-                        fontFamily: 'EB Garamond, Georgia, serif',
+                        fontFamily: serif,
                         fontStyle: 'italic',
                         fontSize: '15px',
-                        color: '#7060a0',
+                        color: '#9080b0',
                         lineHeight: 1.5,
                         marginBottom: '10px',
                       }}>
@@ -326,26 +287,27 @@ export default function InboxPage() {
                       </p>
                     )}
 
-                    {/* Your message */}
                     {firstMsg && (
                       <p style={{
-                        fontFamily: 'EB Garamond, Georgia, serif',
-                        fontSize: '14px',
-                        color: '#9080b0',
-                        lineHeight: 1.6,
-                        borderLeft: '2px solid #2e2040',
+                        fontFamily: serif,
+                        fontSize: '15px',
+                        color: '#c8b8e8',
+                        lineHeight: 1.65,
+                        borderLeft: '2px solid #3a2b58',
                         paddingLeft: '12px',
-                        marginBottom: '10px',
+                        marginBottom: '14px',
                       }}>
                         "{firstMsg.content}"
                       </p>
                     )}
 
-                    <p
-                      className="font-mono text-[9px] uppercase tracking-widest"
-                      style={{ color: '#3a2b58' }}
-                    >
-                      waiting for them to open the thread
+                    <p style={{
+                      fontFamily: serif,
+                      fontStyle: 'italic',
+                      fontSize: '13px',
+                      color: '#5a4b78',
+                    }}>
+                      waiting for them to open it.
                     </p>
                   </div>
                 )
@@ -357,10 +319,7 @@ export default function InboxPage() {
         {/* Open threads */}
         {open.length > 0 && (
           <div className="pt-6">
-            <p
-              className="font-mono text-[9px] uppercase tracking-[0.14em] px-5 mb-3"
-              style={{ color: '#5a4b78' }}
-            >
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] px-5 mb-3" style={{ color: '#7a6b9a' }}>
               open threads — {open.length}
             </p>
             <div className="flex flex-col gap-2 px-4">
@@ -375,7 +334,7 @@ export default function InboxPage() {
                     key={thread.id}
                     type="button"
                     onClick={() => router.push(`/thread/${thread.id}`)}
-                    className="rounded-2xl text-left transition-colors w-full"
+                    className="rounded-2xl text-left w-full transition-colors"
                     style={{
                       background: '#1e1530',
                       border: '1px solid #2e2040',
@@ -386,23 +345,20 @@ export default function InboxPage() {
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#2e2040' }}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span
-                        className="font-mono text-[11px]"
-                        style={{ color: '#9b85e8' }}
-                      >
+                      <span className="font-mono text-[11px]" style={{ color: '#c3b3ff' }}>
                         {otherPerson?.handle || otherPerson?.display_name || 'someone'}
                       </span>
                       {lastMsg && (
-                        <span className="font-mono text-[10px]" style={{ color: '#3a2b58' }}>
+                        <span className="font-mono text-[10px]" style={{ color: '#5a4b78' }}>
                           {timeAgo(lastMsg.created_at)}
                         </span>
                       )}
                     </div>
                     {lastMsg && (
                       <p style={{
-                        fontFamily: 'EB Garamond, Georgia, serif',
-                        fontSize: '14px',
-                        color: '#7060a0',
+                        fontFamily: serif,
+                        fontSize: '15px',
+                        color: '#a090c0',
                         lineHeight: 1.5,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
