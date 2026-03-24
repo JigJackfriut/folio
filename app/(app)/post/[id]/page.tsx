@@ -148,7 +148,7 @@ export default function PostPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="font-mono text-[11px] mb-0.5" style={{ color: '#9b85e8' }}>
-                {post.author.handle || `w/${post.author.display_name?.toLowerCase().replace(/\s/g, '')}`}
+                {post.author?.handle || (post.author?.display_name ? `w/${post.author.display_name.toLowerCase().replace(/\s/g, '')}` : 'anonymous')}
               </p>
               <p className="font-mono text-[10px]" style={{ color: '#4a3b68' }}>
                 {post.author.age && `${post.author.age}`}
