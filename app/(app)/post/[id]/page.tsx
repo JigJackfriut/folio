@@ -145,18 +145,20 @@ export default function PostPage() {
         <div className="px-5">
 
           {/* Meta */}
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="font-mono text-[11px] mb-0.5" style={{ color: '#9b85e8' }}>
-                {post.author?.handle || (post.author?.display_name ? `w/${post.author.display_name.toLowerCase().replace(/\s/g, '')}` : 'anonymous')}
-              </p>
-              <p className="font-mono text-[10px]" style={{ color: '#4a3b68' }}>
-                {post.author.age && `${post.author.age}`}
-                {post.author.location_display && ` · ${post.author.location_display}`}
-                {` · ${timeAgo(post.created_at)}`}
-              </p>
-            </div>
-          </div>
+<div className="flex items-center justify-between mb-4">
+  <div>
+    <p className="font-mono text-[11px] mb-0.5" style={{ color: '#9b85e8' }}>
+      {post.author?.handle ?? 'anonymous'}
+    </p>
+    <p className="font-mono text-[10px]" style={{ color: '#4a3b68' }}>
+      {[
+        post.author?.age ? `${post.author.age}` : null,
+        post.author?.location_display ?? null,
+        timeAgo(post.created_at),
+      ].filter(Boolean).join(' · ')}
+    </p>
+  </div>
+</div>
 
           {/* Headline */}
           <div
