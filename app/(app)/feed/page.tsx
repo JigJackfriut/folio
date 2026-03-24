@@ -36,12 +36,12 @@ export default function FeedPage() {
               onClick={() => setFilterOpen(true)}
               className="flex items-center gap-2 transition-all"
               style={{
-                background: activeFilters > 0 ? 'rgba(109,75,195,0.15)' : 'transparent',
-                border: `1px solid ${activeFilters > 0 ? '#6d4bc3' : '#3a2b58'}`,
-                borderRadius: '20px',
-                padding: '5px 12px',
-                cursor: 'pointer',
-              }}
+  background: activeFilters > 0 ? 'rgba(109,75,195,0.2)' : 'rgba(255,255,255,0.06)',
+  border: `1px solid ${activeFilters > 0 ? '#9b85e8' : '#6a5a88'}`,
+  borderRadius: '20px',
+  padding: '6px 14px',
+  cursor: 'pointer',
+}}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
                 stroke={activeFilters > 0 ? '#9b85e8' : '#5a4b78'} strokeWidth="2">
