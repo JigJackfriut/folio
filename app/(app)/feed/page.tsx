@@ -54,9 +54,6 @@ export default function FeedPage() {
                 {activeFilters > 0 ? `${activeFilters} active` : 'filter'}
               </span>
             </button>
-            <span className="font-mono text-[10px]" style={{ color: '#4a3b68' }}>
-              {!loading && `${posts.length}`}
-            </span>
           </div>
         </div>
 
