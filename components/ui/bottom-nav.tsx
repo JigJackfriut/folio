@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useUnread } from '@/lib/hooks/use-unread'
 
 const NAV = [
   {
@@ -51,6 +52,7 @@ const NAV = [
 
 export function BottomNav() {
   const pathname = usePathname()
+  const { unreadCount } = useUnread()
 
   return (
     <div
@@ -70,13 +72,41 @@ export function BottomNav() {
       >
         {NAV.map(item => {
           const active = pathname.startsWith(item.href)
+          const isInbox = item.href === '/inbox'
+          const showBadge = isInbox && unreadCount > 0
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 px-4"
+              className="flex flex-col items-center gap-1 px-4 relative"
             >
-              {item.icon(active)}
+              <div className="relative">
+                {item.icon(active)}
+                {showBadge && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '-3px',
+                      right: '-4px',
+                      width: unreadCount > 9 ? '16px' : '14px',
+                      height: '14px',
+                      borderRadius: '7px',
+                      background: '#c8922a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span
+                      className="font-mono"
+                      style={{ fontSize: '8px', color: '#fff', fontWeight: 700 }}
+                    >
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  </div>
+                )}
+              </div>
               <span
                 className="font-mono text-[9px] uppercase tracking-widest"
                 style={{ color: active ? '#c8922a' : '#4a3b68' }}
