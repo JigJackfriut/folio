@@ -112,7 +112,7 @@ export default function InboxPage() {
               {incomingPending.map(thread => {
                 const firstMsg = thread.messages?.[0]
                 const isExpanded = expandedPost === thread.id
-                const senderPost = thread.post
+                const senderPost = thread.initiator_post
 
                 return (
                   <div
