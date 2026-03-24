@@ -2,11 +2,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 function normalize(data: any) {
   if (!data) return data
-  // Supabase sometimes returns joined relations as arrays — flatten them
   const flat = { ...data }
   if (Array.isArray(flat.post)) flat.post = flat.post[0] ?? null
   if (Array.isArray(flat.initiator)) flat.initiator = flat.initiator[0] ?? null
   if (Array.isArray(flat.recipient)) flat.recipient = flat.recipient[0] ?? null
+  if (Array.isArray(flat.initiator_post)) flat.initiator_post = flat.initiator_post[0] ?? null
   return flat
 }
 
@@ -51,7 +51,22 @@ export async function getInboxData(client: SupabaseClient, userId: string) {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return (data ?? []).map(normalize)
+
+  // For each thread, fetch the initiator's post separately
+  const threads = (data ?? []).map(normalize)
+  const withInitiatorPosts = await Promise.all(
+    threads.map(async thread => {
+      const { data: initiatorPost } = await client
+        .from('posts')
+        .select('id, headline, post_body, tag_names')
+        .eq('author_id', thread.initiator_id)
+        .eq('status', 'active')
+        .single()
+      return { ...thread, initiator_post: initiatorPost ?? null }
+    })
+  )
+
+  return withInitiatorPosts
 }
 
 export async function getThreadById(client: SupabaseClient, threadId: string) {
