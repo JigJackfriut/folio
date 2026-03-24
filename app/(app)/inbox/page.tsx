@@ -27,15 +27,38 @@ export default function InboxPage() {
   const [expandedPost, setExpandedPost] = useState<string | null>(null)
   const [acting, setActing] = useState<string | null>(null)
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      setUserId(user.id)
-      const data = await getInboxData(supabase, user.id)
-      setThreads(data)
-      setLoading(false)
-    }
+const load = async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  setUserId(user.id)
+  const data = await getInboxData(supabase, user.id)
+  setThreads(data)
+  setLoading(false)
+
+  // Mark all threads as read — viewing inbox is the read event
+  const now = new Date().toISOString()
+  const threadIds = data
+    .filter(t => t.recipient_id === user.id)
+    .map(t => t.id)
+
+  if (threadIds.length > 0) {
+    await supabase
+      .from('threads')
+      .update({ recipient_read_at: now })
+      .in('id', threadIds)
+  }
+
+  const initiatorThreadIds = data
+    .filter(t => t.initiator_id === user.id)
+    .map(t => t.id)
+
+  if (initiatorThreadIds.length > 0) {
+    await supabase
+      .from('threads')
+      .update({ initiator_read_at: now })
+      .in('id', initiatorThreadIds)
+  }
+}
     load()
   }, [])
 
