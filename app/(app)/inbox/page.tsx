@@ -26,43 +26,39 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true)
   const [expandedPost, setExpandedPost] = useState<string | null>(null)
   const [acting, setActing] = useState<string | null>(null)
+  const [newThreadIds, setNewThreadIds] = useState<Set<string>>(new Set())
 
-const load = async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
-  setUserId(user.id)
-  const data = await getInboxData(supabase, user.id)
-  setThreads(data)
-  setLoading(false)
+  useEffect(() => {
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      setUserId(user.id)
 
-  // Mark all threads as read — viewing inbox is the read event
-  const now = new Date().toISOString()
-  const threadIds = data
-    .filter(t => t.recipient_id === user.id)
-    .map(t => t.id)
+      const data = await getInboxData(supabase, user.id)
+      setThreads(data)
+      setLoading(false)
 
-  if (threadIds.length > 0) {
-    await supabase
-      .from('threads')
-      .update({ recipient_read_at: now })
-      .in('id', threadIds)
-  }
+      // Track which pending threads are new before marking as read
+      const unseenPending = data
+        .filter(t => t.status === 'pending' && t.recipient_id === user.id && !t.recipient_read_at)
+        .map(t => t.id)
+      setNewThreadIds(new Set(unseenPending))
 
-  const initiatorThreadIds = data
-    .filter(t => t.initiator_id === user.id)
-    .map(t => t.id)
+      // Mark all as read — viewing inbox is the read event
+      const now = new Date().toISOString()
+      const recipientIds = data.filter(t => t.recipient_id === user.id).map(t => t.id)
+      const initiatorIds = data.filter(t => t.initiator_id === user.id).map(t => t.id)
 
-  if (initiatorThreadIds.length > 0) {
-    await supabase
-      .from('threads')
-      .update({ initiator_read_at: now })
-      .in('id', initiatorThreadIds)
-  }
-}
+      if (recipientIds.length > 0) {
+        await supabase.from('threads').update({ recipient_read_at: now }).in('id', recipientIds)
+      }
+      if (initiatorIds.length > 0) {
+        await supabase.from('threads').update({ initiator_read_at: now }).in('id', initiatorIds)
+      }
+    }
     load()
   }, [])
 
-  // Real-time — update inbox when new threads or messages arrive
   useEffect(() => {
     if (!userId) return
 
@@ -73,9 +69,11 @@ const load = async () => {
         schema: 'public',
         table: 'threads',
         filter: `recipient_id=eq.${userId}`,
-      }, async () => {
+      }, async payload => {
         const data = await getInboxData(supabase, userId)
         setThreads(data)
+        // New thread coming in — mark as new
+        setNewThreadIds(prev => new Set([...prev, payload.new.id]))
       })
       .subscribe()
 
@@ -85,16 +83,12 @@ const load = async () => {
         event: 'INSERT',
         schema: 'public',
         table: 'messages',
-      }, async payload => {
-        // Update last message in the relevant thread
+      }, payload => {
         setThreads(prev => prev.map(t => {
           if (t.id !== payload.new.thread_id) return t
           const already = t.messages?.some((m: any) => m.id === payload.new.id)
           if (already) return t
-          return {
-            ...t,
-            messages: [...(t.messages ?? []), payload.new],
-          }
+          return { ...t, messages: [...(t.messages ?? []), payload.new] }
         }))
       })
       .subscribe()
@@ -109,12 +103,9 @@ const load = async () => {
     if (!userId) return false
     const lastMsg = thread.messages?.[thread.messages.length - 1]
     if (!lastMsg) return false
-    // If last message is from the other person, it's unread
     if (lastMsg.sender_id === userId) return false
     const isInitiator = thread.initiator_id === userId
-    const myLastRead = isInitiator
-      ? thread.initiator_read_at
-      : thread.recipient_read_at
+    const myLastRead = isInitiator ? thread.initiator_read_at : thread.recipient_read_at
     if (!myLastRead) return true
     return new Date(lastMsg.created_at) > new Date(myLastRead)
   }
@@ -130,6 +121,8 @@ const load = async () => {
 
   const handleAccept = async (threadId: string) => {
     setActing(threadId)
+    // Remove from new — thread is being opened
+    setNewThreadIds(prev => { const s = new Set(prev); s.delete(threadId); return s })
     try {
       await acceptThread(supabase, threadId)
       setThreads(prev => prev.map(t =>
@@ -143,6 +136,7 @@ const load = async () => {
 
   const handleDecline = async (threadId: string) => {
     setActing(threadId)
+    setNewThreadIds(prev => { const s = new Set(prev); s.delete(threadId); return s })
     try {
       await declineThread(supabase, threadId)
       setThreads(prev => prev.filter(t => t.id !== threadId))
@@ -170,17 +164,10 @@ const load = async () => {
             <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '30px', color: '#f0eaff' }}>
               inbox
             </p>
-            {incomingPending.length > 0 && (
-              <div
-                style={{
-                  background: '#c8922a',
-                  borderRadius: '20px',
-                  padding: '2px 8px',
-                  marginTop: '4px',
-                }}
-              >
+            {newThreadIds.size > 0 && (
+              <div style={{ background: '#c8922a', borderRadius: '20px', padding: '2px 8px', marginTop: '4px' }}>
                 <span className="font-mono" style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>
-                  {incomingPending.length} new
+                  {newThreadIds.size} new
                 </span>
               </div>
             )}
@@ -209,6 +196,7 @@ const load = async () => {
                 const firstMsg = thread.messages?.[0]
                 const isExpanded = expandedPost === thread.id
                 const senderPost = thread.initiator_post
+                const isNew = newThreadIds.has(thread.id)
 
                 return (
                   <div
@@ -216,20 +204,18 @@ const load = async () => {
                     className="rounded-2xl overflow-hidden"
                     style={{
                       background: '#1e1530',
-                      border: '1px solid #6d4bc3',
+                      border: `1px solid ${isNew ? '#6d4bc3' : '#2e2040'}`,
                     }}
                   >
                     <div className="px-5 pt-5 pb-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          {/* Unread dot */}
-                          <div style={{
-                            width: '7px',
-                            height: '7px',
-                            borderRadius: '50%',
-                            background: '#c8922a',
-                            flexShrink: 0,
-                          }} />
+                          {isNew && (
+                            <div style={{
+                              width: '7px', height: '7px',
+                              borderRadius: '50%', background: '#c8922a', flexShrink: 0,
+                            }} />
+                          )}
                           <span
                             className="font-mono text-[10px] rounded-full"
                             style={{
@@ -250,12 +236,8 @@ const load = async () => {
 
                       {firstMsg && (
                         <p style={{
-                          fontFamily: serif,
-                          fontStyle: 'italic',
-                          fontSize: '19px',
-                          color: '#f0eaff',
-                          lineHeight: 1.6,
-                          marginBottom: '16px',
+                          fontFamily: serif, fontStyle: 'italic',
+                          fontSize: '19px', color: '#f0eaff', lineHeight: 1.6, marginBottom: '16px',
                         }}>
                           "{firstMsg.content}"
                         </p>
@@ -266,15 +248,9 @@ const load = async () => {
                         onClick={() => setExpandedPost(isExpanded ? null : thread.id)}
                         className="flex items-center gap-2"
                         style={{
-                          fontFamily: 'monospace',
-                          fontSize: '10px',
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          color: isExpanded ? '#f0eaff' : '#c3b3ff',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: 0,
+                          fontFamily: 'monospace', fontSize: '10px', letterSpacing: '0.08em',
+                          textTransform: 'uppercase', color: isExpanded ? '#f0eaff' : '#c3b3ff',
+                          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                         }}
                       >
                         <span style={{
@@ -286,43 +262,28 @@ const load = async () => {
                       </button>
                     </div>
 
-                    {/* Their post expanded */}
                     {isExpanded && senderPost && (
-                      <div
-                        className="rounded-xl mx-4 mb-4 px-4 py-4"
-                        style={{ background: '#160f24', border: '1px solid #3a2b58' }}
-                      >
+                      <div className="rounded-xl mx-4 mb-4 px-4 py-4"
+                        style={{ background: '#160f24', border: '1px solid #3a2b58' }}>
                         <p style={{
-                          fontFamily: serif,
-                          fontStyle: 'italic',
-                          fontSize: '18px',
-                          color: '#f0eaff',
-                          lineHeight: 1.5,
-                          marginBottom: '10px',
+                          fontFamily: serif, fontStyle: 'italic',
+                          fontSize: '18px', color: '#f0eaff', lineHeight: 1.5, marginBottom: '10px',
                         }}>
                           {senderPost.headline}
                         </p>
                         <p style={{
-                          fontFamily: serif,
-                          fontSize: '15px',
-                          color: '#c8b8e8',
-                          lineHeight: 1.7,
-                          marginBottom: '12px',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 4,
-                          WebkitBoxOrient: 'vertical' as const,
-                          overflow: 'hidden',
+                          fontFamily: serif, fontSize: '15px', color: '#c8b8e8',
+                          lineHeight: 1.7, marginBottom: '12px',
+                          display: '-webkit-box', WebkitLineClamp: 4,
+                          WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
                         }}>
                           {senderPost.post_body}
                         </p>
                         {senderPost.tag_names?.length > 0 && (
                           <div className="flex flex-wrap gap-1.5">
                             {senderPost.tag_names.map((tag: string) => (
-                              <span
-                                key={tag}
-                                className="font-mono text-[10px] rounded-full px-2.5 py-0.5"
-                                style={{ border: '1px solid #3a2b58', color: '#9b85e8' }}
-                              >
+                              <span key={tag} className="font-mono text-[10px] rounded-full px-2.5 py-0.5"
+                                style={{ border: '1px solid #3a2b58', color: '#9b85e8' }}>
                                 {tag}
                               </span>
                             ))}
@@ -331,24 +292,17 @@ const load = async () => {
                       </div>
                     )}
 
-                    {/* Actions */}
                     <div className="flex gap-2 px-5 pb-5">
                       <button
                         type="button"
                         onClick={() => handleDecline(thread.id)}
                         disabled={acting === thread.id}
                         style={{
-                          fontFamily: 'monospace',
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '10px 18px',
-                          borderRadius: '20px',
-                          border: '1px solid #4a3b6a',
-                          background: 'transparent',
-                          color: '#c8b8e8',
-                          cursor: 'pointer',
+                          fontFamily: 'monospace', fontSize: '10px', fontWeight: 700,
+                          letterSpacing: '0.08em', textTransform: 'uppercase',
+                          padding: '10px 18px', borderRadius: '20px',
+                          border: '1px solid #4a3b6a', background: 'transparent',
+                          color: '#c8b8e8', cursor: 'pointer',
                         }}
                       >
                         decline
@@ -358,18 +312,11 @@ const load = async () => {
                         onClick={() => handleAccept(thread.id)}
                         disabled={acting === thread.id}
                         style={{
-                          fontFamily: 'monospace',
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '10px 18px',
-                          borderRadius: '20px',
-                          border: 'none',
-                          background: '#6d4bc3',
-                          color: '#ffffff',
-                          cursor: 'pointer',
-                          flex: 1,
+                          fontFamily: 'monospace', fontSize: '10px', fontWeight: 700,
+                          letterSpacing: '0.08em', textTransform: 'uppercase',
+                          padding: '10px 18px', borderRadius: '20px',
+                          border: 'none', background: '#6d4bc3', color: '#ffffff',
+                          cursor: 'pointer', flex: 1,
                         }}
                       >
                         {acting === thread.id ? 'opening...' : 'open thread →'}
@@ -394,22 +341,14 @@ const load = async () => {
                 const theirPost = thread.post
 
                 return (
-                  <div
-                    key={thread.id}
-                    className="rounded-2xl"
-                    style={{ background: '#1a1530', border: '1px solid #2a1f42', padding: '18px 20px' }}
-                  >
+                  <div key={thread.id} className="rounded-2xl"
+                    style={{ background: '#1a1530', border: '1px solid #2a1f42', padding: '18px 20px' }}>
                     <div className="flex items-center justify-between mb-3">
-                      <span
-                        className="font-mono text-[10px] rounded-full"
+                      <span className="font-mono text-[10px] rounded-full"
                         style={{
-                          padding: '3px 10px',
-                          background: 'transparent',
-                          border: '1px solid #4a3b6a',
-                          color: '#c3b3ff',
-                          letterSpacing: '0.06em',
-                        }}
-                      >
+                          padding: '3px 10px', background: 'transparent',
+                          border: '1px solid #4a3b6a', color: '#c3b3ff', letterSpacing: '0.06em',
+                        }}>
                         you replied
                       </span>
                       <span className="font-mono text-[10px]" style={{ color: '#9b85e8' }}>
@@ -419,12 +358,8 @@ const load = async () => {
 
                     {theirPost && (
                       <p style={{
-                        fontFamily: serif,
-                        fontStyle: 'italic',
-                        fontSize: '15px',
-                        color: '#c8b8e8',
-                        lineHeight: 1.5,
-                        marginBottom: '10px',
+                        fontFamily: serif, fontStyle: 'italic',
+                        fontSize: '15px', color: '#c8b8e8', lineHeight: 1.5, marginBottom: '10px',
                       }}>
                         re: {theirPost.headline}
                       </p>
@@ -432,24 +367,15 @@ const load = async () => {
 
                     {firstMsg && (
                       <p style={{
-                        fontFamily: serif,
-                        fontSize: '17px',
-                        color: '#f0eaff',
-                        lineHeight: 1.65,
-                        borderLeft: '2px solid #6d4bc3',
-                        paddingLeft: '14px',
-                        marginBottom: '14px',
+                        fontFamily: serif, fontSize: '17px', color: '#f0eaff',
+                        lineHeight: 1.65, borderLeft: '2px solid #6d4bc3',
+                        paddingLeft: '14px', marginBottom: '14px',
                       }}>
                         "{firstMsg.content}"
                       </p>
                     )}
 
-                    <p style={{
-                      fontFamily: serif,
-                      fontStyle: 'italic',
-                      fontSize: '14px',
-                      color: '#9b85e8',
-                    }}>
+                    <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '14px', color: '#9b85e8' }}>
                       waiting for them to open it.
                     </p>
                   </div>
@@ -482,9 +408,7 @@ const load = async () => {
                     style={{
                       background: unread ? '#1e1a2e' : '#1e1530',
                       border: `1px solid ${unread ? '#4a3b6a' : '#2e2040'}`,
-                      padding: '16px 20px',
-                      cursor: 'pointer',
-                      transition: 'border-color 0.15s',
+                      padding: '16px 20px', cursor: 'pointer', transition: 'border-color 0.15s',
                     }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = '#6d4bc3' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = unread ? '#4a3b6a' : '#2e2040' }}
@@ -493,17 +417,12 @@ const load = async () => {
                       <div className="flex items-center gap-2">
                         {unread && (
                           <div style={{
-                            width: '7px',
-                            height: '7px',
-                            borderRadius: '50%',
-                            background: '#c8922a',
-                            flexShrink: 0,
+                            width: '7px', height: '7px',
+                            borderRadius: '50%', background: '#c8922a', flexShrink: 0,
                           }} />
                         )}
-                        <span
-                          className="font-mono text-[11px]"
-                          style={{ color: unread ? '#f0eaff' : '#c3b3ff', fontWeight: unread ? 700 : 400 }}
-                        >
+                        <span className="font-mono text-[11px]"
+                          style={{ color: unread ? '#f0eaff' : '#c3b3ff', fontWeight: unread ? 700 : 400 }}>
                           {otherPerson?.handle || otherPerson?.display_name || 'someone'}
                         </span>
                       </div>
@@ -515,14 +434,10 @@ const load = async () => {
                     </div>
                     {lastMsg && (
                       <p style={{
-                        fontFamily: serif,
-                        fontSize: '15px',
-                        color: unread ? '#e0d0f8' : '#c8b8e8',
-                        lineHeight: 1.5,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical' as const,
-                        overflow: 'hidden',
+                        fontFamily: serif, fontSize: '15px',
+                        color: unread ? '#e0d0f8' : '#c8b8e8', lineHeight: 1.5,
+                        display: '-webkit-box', WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
                       }}>
                         {lastMsg.content}
                       </p>
