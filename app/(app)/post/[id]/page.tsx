@@ -147,9 +147,7 @@ export default function PostPage() {
           {/* Meta */}
 <div className="flex items-center justify-between mb-4">
   <div>
-    <p className="font-mono text-[11px] mb-0.5" style={{ color: '#9b85e8' }}>
-      {post.author?.handle ?? 'anonymous'}
-    </p>
+
     <p className="font-mono text-[10px]" style={{ color: '#4a3b68' }}>
       {[
         post.author?.age ? `${post.author.age}` : null,
