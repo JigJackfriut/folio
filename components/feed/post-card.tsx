@@ -51,7 +51,7 @@ export function PostCard({ post, crossedTags }: Props) {
 />
           <span
             className="font-mono text-[10px]"
-            style={{ color: '#4a3b68', letterSpacing: '0.04em' }}
+            style={{ color: '#6a5a88', letterSpacing: '0.04em' }}
           >
             {timeAgo(post.created_at)}
           </span>
@@ -60,7 +60,7 @@ export function PostCard({ post, crossedTags }: Props) {
         {/* Handle */}
         <p
           className="font-mono text-[11px] mb-3"
-          style={{ color: '#7a6b9a', letterSpacing: '0.04em' }}
+          style={{ color: '#9b85e8', letterSpacing: '0.04em' }}
         >
           {post.author.handle || `w/${post.author.display_name?.toLowerCase().replace(/\s/g, '')}`}
         </p>
