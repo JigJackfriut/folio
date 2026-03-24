@@ -56,7 +56,6 @@ export default function PostPage() {
     setError('')
 
     try {
-      // Create thread with pending status
       const { data: thread, error: threadErr } = await supabase
         .from('threads')
         .insert({
@@ -70,7 +69,6 @@ export default function PostPage() {
 
       if (threadErr) throw threadErr
 
-      // Send first message
       const { error: msgErr } = await supabase
         .from('messages')
         .insert({
@@ -93,8 +91,10 @@ export default function PostPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-5 h-5 rounded-full border-2 animate-spin"
-          style={{ borderColor: '#3a2b58', borderTopColor: '#6d4bc3' }} />
+        <div
+          className="w-5 h-5 rounded-full border-2 animate-spin"
+          style={{ borderColor: '#3a2b58', borderTopColor: '#6d4bc3' }}
+        />
       </div>
     )
   }
@@ -129,8 +129,8 @@ export default function PostPage() {
     <main className="min-h-screen">
       <div className="w-full max-w-xl mx-auto">
 
-        {/* Back bar */}
-        <div className="px-5 pt-14 pb-4 flex items-center gap-3">
+        {/* Back */}
+        <div className="px-5 pt-14 pb-4">
           <button
             type="button"
             onClick={() => router.back()}
@@ -141,30 +141,21 @@ export default function PostPage() {
           </button>
         </div>
 
-        {/* Post content */}
         <div className="px-5">
 
-          {/* Meta */}
-<div className="flex items-center justify-between mb-4">
-  <div>
-
-    <p className="font-mono text-[10px]" style={{ color: '#4a3b68' }}>
-      {[
-        post.author?.age ? `${post.author.age}` : null,
-        post.author?.location_display ?? null,
-        timeAgo(post.created_at),
-      ].filter(Boolean).join(' · ')}
-    </p>
-  </div>
-</div>
+          {/* Meta — no handle shown */}
+          <p className="font-mono text-[10px] mb-5" style={{ color: '#4a3b68' }}>
+            {[
+              post.author?.age ? `${post.author.age}` : null,
+              post.author?.location_display ?? null,
+              timeAgo(post.created_at),
+            ].filter(Boolean).join(' · ')}
+          </p>
 
           {/* Headline */}
           <div
             className="mb-5"
-            style={{
-              borderLeft: '2px solid #4a3b6a',
-              paddingLeft: '16px',
-            }}
+            style={{ borderLeft: '2px solid #4a3b6a', paddingLeft: '16px' }}
           >
             <p style={{
               fontFamily: 'EB Garamond, Georgia, serif',
@@ -197,10 +188,7 @@ export default function PostPage() {
                 <span
                   key={tag}
                   className="font-mono text-[10px] rounded-full px-2.5 py-1"
-                  style={{
-                    border: '1px solid #2e2040',
-                    color: '#7a6b9a',
-                  }}
+                  style={{ border: '1px solid #2e2040', color: '#7a6b9a' }}
                 >
                   {tag}
                 </span>
@@ -209,7 +197,7 @@ export default function PostPage() {
           )}
 
           {/* Divider */}
-          <div style={{ height: '1px', background: '#2a1f42', marginBottom: '24px' }} />
+          <div style={{ height: '1px', background: '#2a1f42', marginBottom: '28px' }} />
 
           {/* Reply section */}
           {isOwnPost ? (
@@ -223,25 +211,28 @@ export default function PostPage() {
             </div>
           ) : sent ? (
             <div
-              className="rounded-2xl px-5 py-6 text-center"
+              className="rounded-2xl px-5 py-8 text-center"
               style={{ background: '#1a2a1a', border: '1px solid #2a4a2a' }}
             >
               <p style={{
                 fontFamily: 'EB Garamond, Georgia, serif',
                 fontStyle: 'italic',
-                fontSize: '20px',
+                fontSize: '22px',
                 color: '#f0eaff',
                 marginBottom: '8px',
               }}>
                 sent.
               </p>
-              <p className="font-mono text-[10px] leading-relaxed" style={{ color: '#4a6a4a' }}>
-                anonymous until they open the thread.
+              <p
+                className="font-mono text-[10px] leading-relaxed"
+                style={{ color: '#4a6a4a' }}
+              >
+                your name stays hidden until they choose to open it.
               </p>
               <button
                 type="button"
                 onClick={() => router.push('/feed')}
-                className="font-mono text-[10px] uppercase tracking-widest mt-5 block mx-auto"
+                className="font-mono text-[10px] uppercase tracking-widest mt-6 block mx-auto"
                 style={{ color: '#6a5a88', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 ← back to feed
@@ -250,15 +241,24 @@ export default function PostPage() {
           ) : (
             <div>
               <p
-                className="font-mono text-[10px] uppercase tracking-widest mb-3"
-                style={{ color: '#5a4b78' }}
+                className="font-mono text-[10px] uppercase tracking-widest mb-1"
+                style={{ color: '#6a5a88' }}
               >
-                reply anonymously
+                send a reply
+              </p>
+              <p style={{
+                fontFamily: 'EB Garamond, Georgia, serif',
+                fontStyle: 'italic',
+                fontSize: '14px',
+                color: '#4a3b68',
+                marginBottom: '14px',
+              }}>
+                your name stays hidden until they open the thread.
               </p>
               <textarea
                 value={reply}
                 onChange={e => setReply(e.target.value)}
-                placeholder="write something real. they'll decide whether to open the thread."
+                placeholder="say something worth opening."
                 rows={5}
                 className="w-full outline-none resize-none rounded-xl"
                 style={{
@@ -293,12 +293,12 @@ export default function PostPage() {
                   style={{
                     padding: '10px 24px',
                     background: reply.trim() && !sending ? '#6d4bc3' : 'rgba(109,75,195,0.2)',
-                    color: reply.trim() && !sending ? '#fff' : '#4a3b68',
+                    color: reply.trim() && !sending ? '#ffffff' : '#4a3b68',
                     border: 'none',
                     cursor: reply.trim() && !sending ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  {sending ? 'sending...' : 'send reply →'}
+                  {sending ? 'sending...' : 'send →'}
                 </button>
               </div>
             </div>
@@ -306,7 +306,6 @@ export default function PostPage() {
 
         </div>
 
-        {/* Bottom padding for nav */}
         <div style={{ height: '80px' }} />
       </div>
     </main>
