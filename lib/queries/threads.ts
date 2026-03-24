@@ -1,5 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+function normalize(data: any) {
+  if (!data) return data
+  // Supabase sometimes returns joined relations as arrays — flatten them
+  const flat = { ...data }
+  if (Array.isArray(flat.post)) flat.post = flat.post[0] ?? null
+  if (Array.isArray(flat.initiator)) flat.initiator = flat.initiator[0] ?? null
+  if (Array.isArray(flat.recipient)) flat.recipient = flat.recipient[0] ?? null
+  return flat
+}
+
 export async function getInboxData(client: SupabaseClient, userId: string) {
   const { data, error } = await client
     .from('threads')
@@ -41,7 +51,7 @@ export async function getInboxData(client: SupabaseClient, userId: string) {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data ?? []
+  return (data ?? []).map(normalize)
 }
 
 export async function getThreadById(client: SupabaseClient, threadId: string) {
@@ -84,5 +94,5 @@ export async function getThreadById(client: SupabaseClient, threadId: string) {
     .single()
 
   if (error) return null
-  return data
+  return normalize(data)
 }
