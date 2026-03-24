@@ -50,7 +50,6 @@ export default function ThreadPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [thread?.messages])
 
-  // Real-time messages
   useEffect(() => {
     const channel = supabase
       .channel(`thread-${id}`)
@@ -162,11 +161,22 @@ export default function ThreadPage() {
           >
             ← inbox
           </button>
-          <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '22px', color: '#f0eaff', marginBottom: '4px' }}>
+          <p style={{
+            fontFamily: serif,
+            fontStyle: 'italic',
+            fontSize: '22px',
+            color: '#f0eaff',
+            marginBottom: '4px',
+          }}>
             {otherPerson?.handle || otherPerson?.display_name || 'someone'}
           </p>
           {thread.post?.headline && (
-            <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '13px', color: '#8a7aaa' }}>
+            <p style={{
+              fontFamily: serif,
+              fontStyle: 'italic',
+              fontSize: '13px',
+              color: '#8a7aaa',
+            }}>
               re: {thread.post.headline}
             </p>
           )}
@@ -177,8 +187,12 @@ export default function ThreadPage() {
           <div
             className="flex-shrink-0 mx-4 mt-4 rounded-2xl overflow-hidden"
             style={{
-              background: echoRevealed ? 'rgba(200,146,42,0.08)' : 'rgba(109,75,195,0.08)',
-              border: `1px solid ${echoRevealed ? 'rgba(200,146,42,0.3)' : 'rgba(109,75,195,0.25)'}`,
+              background: echoRevealed
+                ? 'rgba(200,146,42,0.08)'
+                : 'rgba(109,75,195,0.08)',
+              border: `1px solid ${echoRevealed
+                ? 'rgba(200,146,42,0.3)'
+                : 'rgba(109,75,195,0.25)'}`,
             }}
           >
             {echoRevealed ? (
@@ -219,7 +233,12 @@ export default function ThreadPage() {
                 >
                   ◎ you share something hidden
                 </p>
-                <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '14px', color: '#c8b8e8' }}>
+                <p style={{
+                  fontFamily: serif,
+                  fontStyle: 'italic',
+                  fontSize: '14px',
+                  color: '#c8b8e8',
+                }}>
                   tap to reveal your echo tags — only visible here.
                 </p>
               </button>
@@ -228,10 +247,18 @@ export default function ThreadPage() {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4" style={{ minHeight: 0 }}>
+        <div
+          className="flex-1 overflow-y-auto px-4 py-4"
+          style={{ minHeight: 0 }}
+        >
           {messages.length === 0 && (
             <div className="flex items-center justify-center py-16">
-              <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '16px', color: '#6a5a88' }}>
+              <p style={{
+                fontFamily: serif,
+                fontStyle: 'italic',
+                fontSize: '16px',
+                color: '#6a5a88',
+              }}>
                 say something.
               </p>
             </div>
@@ -242,7 +269,8 @@ export default function ThreadPage() {
               const isMe = msg.sender_id === userId
               const prevMsg = messages[i - 1]
               const showTime = !prevMsg ||
-                new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime() > 1000 * 60 * 15
+                new Date(msg.created_at).getTime() -
+                new Date(prevMsg.created_at).getTime() > 1000 * 60 * 15
 
               return (
                 <div key={msg.id}>
@@ -259,7 +287,9 @@ export default function ThreadPage() {
                       style={{
                         maxWidth: '78%',
                         padding: '10px 14px',
-                        borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                        borderRadius: isMe
+                          ? '18px 18px 4px 18px'
+                          : '18px 18px 18px 4px',
                         background: isMe ? '#6d4bc3' : '#1e1530',
                         border: isMe ? 'none' : '1px solid #2e2040',
                       }}
@@ -293,7 +323,9 @@ export default function ThreadPage() {
           }}
         >
           {error && (
-            <p className="font-mono text-[10px] mb-2" style={{ color: '#f87171' }}>{error}</p>
+            <p className="font-mono text-[10px] mb-2" style={{ color: '#f87171' }}>
+              {error}
+            </p>
           )}
           <div className="flex items-end gap-3">
             <textarea
@@ -343,7 +375,10 @@ export default function ThreadPage() {
               </svg>
             </button>
           </div>
-          <p className="font-mono text-[9px] mt-2 text-center" style={{ color: '#4a3b68' }}>
+          <p
+            className="font-mono text-[9px] mt-2 text-center"
+            style={{ color: '#4a3b68' }}
+          >
             enter to send · shift+enter for new line
           </p>
         </div>
