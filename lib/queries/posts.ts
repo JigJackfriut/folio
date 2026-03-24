@@ -49,17 +49,21 @@ export async function getPostById(
   const { data, error } = await client
     .from('posts')
     .select(`
-      id, author_id, headline, post_body, tag_names, seeking, created_at,
+      id, author_id, headline, post_body, tag_names, seeking, created_at, status,
       author:profiles!posts_author_id_fkey (
         id, handle, display_name, age, location_display, intent_type, connection_pref
       )
     `)
     .eq('id', postId)
-    .eq('status', 'active')
     .single()
 
   if (error) return null
-  return data
+  if (!data) return null
+
+  // Flatten in case author comes back as array
+  const author = Array.isArray(data.author) ? data.author[0] : data.author
+
+  return { ...data, author } as unknown as PostWithAuthor
 }
 
 export async function getPostByAuthor(
