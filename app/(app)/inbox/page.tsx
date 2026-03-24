@@ -93,10 +93,10 @@ export default function InboxPage() {
 
         {totalCount === 0 && (
           <div className="flex flex-col items-center justify-center py-32 px-8 text-center">
-            <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '20px', color: '#7a6b9a', marginBottom: '8px' }}>
+            <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '20px', color: '#c8b8e8', marginBottom: '8px' }}>
               nothing yet.
             </p>
-            <p className="font-mono text-[11px] uppercase tracking-widest" style={{ color: '#5a4b78' }}>
+            <p className="font-mono text-[11px] uppercase tracking-widest" style={{ color: '#8a7aaa' }}>
               replies to your post will appear here
             </p>
           </div>
@@ -105,7 +105,7 @@ export default function InboxPage() {
         {/* Incoming — someone replied to you */}
         {incomingPending.length > 0 && (
           <div className="pt-6">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] px-5 mb-3" style={{ color: '#8a7aaa' }}>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] px-5 mb-3" style={{ color: '#c3b3ff' }}>
               reply requests — {incomingPending.length}
             </p>
             <div className="flex flex-col gap-3 px-4">
@@ -126,15 +126,15 @@ export default function InboxPage() {
                           className="font-mono text-[10px] rounded-full"
                           style={{
                             padding: '3px 10px',
-                            background: 'rgba(109,75,195,0.12)',
-                            border: '1px solid rgba(109,75,195,0.25)',
+                            background: 'rgba(109,75,195,0.15)',
+                            border: '1px solid rgba(109,75,195,0.3)',
                             color: '#c3b3ff',
                             letterSpacing: '0.06em',
                           }}
                         >
                           someone replied
                         </span>
-                        <span className="font-mono text-[10px]" style={{ color: '#6a5a88' }}>
+                        <span className="font-mono text-[10px]" style={{ color: '#9b85e8' }}>
                           {timeAgo(thread.created_at)}
                         </span>
                       </div>
@@ -143,7 +143,7 @@ export default function InboxPage() {
                         <p style={{
                           fontFamily: serif,
                           fontStyle: 'italic',
-                          fontSize: '18px',
+                          fontSize: '19px',
                           color: '#f0eaff',
                           lineHeight: 1.6,
                           marginBottom: '16px',
@@ -161,7 +161,7 @@ export default function InboxPage() {
                           fontSize: '10px',
                           letterSpacing: '0.08em',
                           textTransform: 'uppercase',
-                          color: isExpanded ? '#c3b3ff' : '#9b85e8',
+                          color: isExpanded ? '#f0eaff' : '#c3b3ff',
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
@@ -181,12 +181,12 @@ export default function InboxPage() {
                     {isExpanded && senderPost && (
                       <div
                         className="rounded-xl mx-4 mb-4 px-4 py-4"
-                        style={{ background: '#160f24', border: '1px solid #2a1f42' }}
+                        style={{ background: '#160f24', border: '1px solid #3a2b58' }}
                       >
                         <p style={{
                           fontFamily: serif,
                           fontStyle: 'italic',
-                          fontSize: '17px',
+                          fontSize: '18px',
                           color: '#f0eaff',
                           lineHeight: 1.5,
                           marginBottom: '10px',
@@ -195,8 +195,8 @@ export default function InboxPage() {
                         </p>
                         <p style={{
                           fontFamily: serif,
-                          fontSize: '14px',
-                          color: '#a090c0',
+                          fontSize: '15px',
+                          color: '#c8b8e8',
                           lineHeight: 1.7,
                           marginBottom: '12px',
                           display: '-webkit-box',
@@ -211,8 +211,8 @@ export default function InboxPage() {
                             {senderPost.tag_names.map((tag: string) => (
                               <span
                                 key={tag}
-                                className="font-mono text-[9px] rounded-full px-2 py-0.5"
-                                style={{ border: '1px solid #2a1f42', color: '#6a5a88' }}
+                                className="font-mono text-[10px] rounded-full px-2.5 py-0.5"
+                                style={{ border: '1px solid #3a2b58', color: '#9b85e8' }}
                               >
                                 {tag}
                               </span>
@@ -236,9 +236,9 @@ export default function InboxPage() {
                           textTransform: 'uppercase',
                           padding: '10px 18px',
                           borderRadius: '20px',
-                          border: '1px solid #3a2b58',
+                          border: '1px solid #4a3b6a',
                           background: 'transparent',
-                          color: '#8a7aaa',
+                          color: '#c8b8e8',
                           cursor: 'pointer',
                         }}
                       >
@@ -276,7 +276,7 @@ export default function InboxPage() {
         {/* Outgoing — you replied, waiting */}
         {outgoingPending.length > 0 && (
           <div className="pt-6">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] px-5 mb-3" style={{ color: '#8a7aaa' }}>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] px-5 mb-3" style={{ color: '#c3b3ff' }}>
               waiting for reply — {outgoingPending.length}
             </p>
             <div className="flex flex-col gap-3 px-4">
@@ -296,14 +296,14 @@ export default function InboxPage() {
                         style={{
                           padding: '3px 10px',
                           background: 'transparent',
-                          border: '1px solid #3a2b58',
-                          color: '#8a7aaa',
+                          border: '1px solid #4a3b6a',
+                          color: '#c3b3ff',
                           letterSpacing: '0.06em',
                         }}
                       >
                         you replied
                       </span>
-                      <span className="font-mono text-[10px]" style={{ color: '#6a5a88' }}>
+                      <span className="font-mono text-[10px]" style={{ color: '#9b85e8' }}>
                         {timeAgo(thread.created_at)}
                       </span>
                     </div>
@@ -313,7 +313,7 @@ export default function InboxPage() {
                         fontFamily: serif,
                         fontStyle: 'italic',
                         fontSize: '15px',
-                        color: '#8a7aaa',
+                        color: '#c8b8e8',
                         lineHeight: 1.5,
                         marginBottom: '10px',
                       }}>
@@ -324,10 +324,10 @@ export default function InboxPage() {
                     {firstMsg && (
                       <p style={{
                         fontFamily: serif,
-                        fontSize: '16px',
-                        color: '#c8b8e8',
+                        fontSize: '17px',
+                        color: '#f0eaff',
                         lineHeight: 1.65,
-                        borderLeft: '2px solid #4a3b6a',
+                        borderLeft: '2px solid #6d4bc3',
                         paddingLeft: '14px',
                         marginBottom: '14px',
                       }}>
@@ -339,7 +339,7 @@ export default function InboxPage() {
                       fontFamily: serif,
                       fontStyle: 'italic',
                       fontSize: '14px',
-                      color: '#6a5a88',
+                      color: '#9b85e8',
                     }}>
                       waiting for them to open it.
                     </p>
@@ -353,7 +353,7 @@ export default function InboxPage() {
         {/* Open threads */}
         {open.length > 0 && (
           <div className="pt-6">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] px-5 mb-3" style={{ color: '#8a7aaa' }}>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] px-5 mb-3" style={{ color: '#c3b3ff' }}>
               open threads — {open.length}
             </p>
             <div className="flex flex-col gap-2 px-4">
@@ -376,7 +376,7 @@ export default function InboxPage() {
                       cursor: 'pointer',
                       transition: 'border-color 0.15s',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#4a3b6a' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#6d4bc3' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#2e2040' }}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -384,7 +384,7 @@ export default function InboxPage() {
                         {otherPerson?.handle || otherPerson?.display_name || 'someone'}
                       </span>
                       {lastMsg && (
-                        <span className="font-mono text-[10px]" style={{ color: '#6a5a88' }}>
+                        <span className="font-mono text-[10px]" style={{ color: '#9b85e8' }}>
                           {timeAgo(lastMsg.created_at)}
                         </span>
                       )}
@@ -393,7 +393,7 @@ export default function InboxPage() {
                       <p style={{
                         fontFamily: serif,
                         fontSize: '15px',
-                        color: '#a090c0',
+                        color: '#c8b8e8',
                         lineHeight: 1.5,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
