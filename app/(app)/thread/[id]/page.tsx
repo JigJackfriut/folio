@@ -42,9 +42,27 @@ export default function ThreadPage() {
       if (!data) { setLoading(false); return }
       setThread(data)
       setLoading(false)
+
+      // Mark thread as read
+      const field = data.initiator_id === user.id
+        ? 'initiator_read_at'
+        : 'recipient_read_at'
+      await supabase
+        .from('threads')
+        .update({ [field]: new Date().toISOString() })
+        .eq('id', id)
     }
     load()
   }, [id])
+
+  // Mark as read again when new messages arrive
+  const markRead = async (uid: string, initiatorId: string) => {
+    const field = initiatorId === uid ? 'initiator_read_at' : 'recipient_read_at'
+    await supabase
+      .from('threads')
+      .update({ [field]: new Date().toISOString() })
+      .eq('id', id)
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -59,15 +77,25 @@ export default function ThreadPage() {
         table: 'messages',
         filter: `thread_id=eq.${id}`,
       }, payload => {
-        setThread((prev: any) => prev ? {
-          ...prev,
-          messages: [...(prev.messages ?? []), payload.new],
-        } : prev)
+        const newMsg = {
+          ...payload.new,
+          created_at: payload.new.created_at ?? new Date().toISOString(),
+        }
+        setThread((prev: any) => {
+          if (!prev) return prev
+          const already = prev.messages?.some((m: any) => m.id === newMsg.id)
+          if (already) return prev
+          // Mark as read if the new message is from the other person
+          if (newMsg.sender_id !== userId && userId) {
+            markRead(userId, prev.initiator_id)
+          }
+          return { ...prev, messages: [...(prev.messages ?? []), newMsg] }
+        })
       })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [id])
+  }, [id, userId])
 
   const handleSend = async () => {
     if (!message.trim() || !userId || sending) return
@@ -269,12 +297,13 @@ export default function ThreadPage() {
               const isMe = msg.sender_id === userId
               const prevMsg = messages[i - 1]
               const showTime = !prevMsg ||
+                (msg.created_at && prevMsg.created_at &&
                 new Date(msg.created_at).getTime() -
-                new Date(prevMsg.created_at).getTime() > 1000 * 60 * 15
+                new Date(prevMsg.created_at).getTime() > 1000 * 60 * 5)
 
               return (
                 <div key={msg.id}>
-                  {showTime && (
+                  {showTime && msg.created_at && (
                     <p
                       className="text-center font-mono text-[9px] uppercase tracking-widest my-3"
                       style={{ color: '#6a5a88' }}
