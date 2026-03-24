@@ -66,7 +66,7 @@ export function FeedList({ posts, crossedTags, loadingMore, hasMore, onLoadMore 
       {!hasMore && posts.length > 0 && (
         <p
           className="text-center font-mono text-[11px] uppercase tracking-widest py-10"
-          style={{ color: '#3a2b58' }}
+          style={{ color: '#5a4b78' }}
         >
           you've seen everything
         </p>
