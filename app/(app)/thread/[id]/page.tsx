@@ -196,7 +196,7 @@ export default function ThreadPage() {
             color: '#f0eaff',
             marginBottom: '4px',
           }}>
-            {otherPerson?.handle || otherPerson?.display_name || 'someone'}
+            {otherPerson?.display_name || otherPerson?.handle || 'someone'}
           </p>
           {thread.post?.headline && (
             <p style={{
