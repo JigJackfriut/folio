@@ -20,6 +20,8 @@ function timeAgo(date: string): string {
   return `${Math.floor(days / 7)}w ago`
 }
 
+const serif = 'EB Garamond, Georgia, serif'
+
 export function PostCard({ post, crossedTags }: Props) {
   const supabase = createClient()
 
@@ -32,23 +34,29 @@ export function PostCard({ post, crossedTags }: Props) {
   return (
     <Link href={`/post/${post.id}`} onClick={handleClick} className="block">
       <div
-        className="rounded-2xl transition-colors duration-150"
+        className="rounded-2xl transition-all duration-150"
         style={{
           background: '#1e1530',
-          border: '1px solid #2e2040',
+          border: '1.5px solid #3d2f5c',
           padding: '20px',
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = '#4a3b6a' }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = '#2e2040' }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = '#6d4bc3'
+          e.currentTarget.style.background = '#221740'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = '#3d2f5c'
+          e.currentTarget.style.background = '#1e1530'
+        }}
       >
         {/* Signal + time */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <SignalLabel
-  signal={post.signal}
-  reason={post.signal_reason}
-  echoCount={post.echo_count}
-  matchedTags={post.matched_tags}
-/>
+            signal={post.signal}
+            reason={post.signal_reason}
+            echoCount={post.echo_count}
+            matchedTags={post.matched_tags}
+          />
           <span
             className="font-mono text-[10px]"
             style={{ color: '#6a5a88', letterSpacing: '0.04em' }}
@@ -65,27 +73,27 @@ export function PostCard({ post, crossedTags }: Props) {
           {post.author.handle || `w/${post.author.display_name?.toLowerCase().replace(/\s/g, '')}`}
         </p>
 
-        {/* Headline — high contrast */}
+        {/* Headline — large and prominent */}
         <p
-          className="leading-snug mb-3"
+          className="mb-3"
           style={{
-            fontFamily: 'EB Garamond, Georgia, serif',
+            fontFamily: serif,
             fontStyle: 'italic',
-            fontSize: '20px',
+            fontSize: '22px',
             color: '#f0eaff',
-            lineHeight: 1.45,
+            lineHeight: 1.4,
           }}
         >
           {post.headline}
         </p>
 
-        {/* Body — readable contrast */}
+        {/* Body */}
         <p
-          className="leading-relaxed mb-4"
+          className="mb-4"
           style={{
-            fontFamily: 'EB Garamond, Georgia, serif',
-            fontSize: '15px',
-            color: '#b8a8d0',
+            fontFamily: serif,
+            fontSize: '16px',
+            color: '#c8b8e8',
             lineHeight: 1.7,
             display: '-webkit-box',
             WebkitLineClamp: 3,
@@ -107,9 +115,9 @@ export function PostCard({ post, crossedTags }: Props) {
                   key={tag}
                   className="font-mono text-[10px] rounded-full px-2.5 py-1"
                   style={{
-                    border: `1px solid ${isMatched ? 'rgba(155,133,232,0.5)' : '#2e2040'}`,
-                    background: isMatched ? 'rgba(109,75,195,0.12)' : 'transparent',
-                    color: isCrossed ? '#3a2b58' : isMatched ? '#c3b3ff' : '#6a5a88',
+                    border: `1px solid ${isMatched ? 'rgba(155,133,232,0.6)' : '#3d2f5c'}`,
+                    background: isMatched ? 'rgba(109,75,195,0.15)' : 'transparent',
+                    color: isCrossed ? '#4a3b68' : isMatched ? '#c3b3ff' : '#8a7aaa',
                     textDecoration: isCrossed ? 'line-through' : 'none',
                   }}
                 >
