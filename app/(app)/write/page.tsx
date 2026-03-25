@@ -60,20 +60,22 @@ export default function WritePage() {
           .eq('id', postId)
 
         if (error) throw error
-      } } else {
+      } } } else {
   const { error } = await supabase
     .from('posts')
-    .insert({
-      author_id: user.id,
-      headline: headline.trim(),
-      post_body: body.trim(),
-      seeking: 'something_real',
-      status: 'active',
-    })
+    .upsert(
+      {
+        author_id: user.id,
+        headline: headline.trim(),
+        post_body: body.trim(),
+        seeking: 'something_real',
+        status: 'active',
+      },
+      { onConflict: 'author_id' }
+    )
 
   if (error) throw error
 }
-
    
 
       setSaved(true)
