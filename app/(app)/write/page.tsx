@@ -1,94 +1,105 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getPostById } from '@/lib/queries/posts'
+import { logInteraction } from '@/lib/mutations/interactions'
+import type { PostWithAuthor } from '@/lib/types'
 
 const serif = 'EB Garamond, Georgia, serif'
 
-export default function WritePage() {
-  const supabase = createClient()
-  const router = useRouter()
+function timeAgo(date: string): string {
+  const hours = Math.floor((Date.now() - new Date(date).getTime()) / 3600000)
+  if (hours < 1) return 'just now'
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return `${Math.floor(days / 7)}w ago`
+}
 
-  const [headline, setHeadline] = useState('')
-  const [body, setBody] = useState('')
+export default function PostPage() {
+  const { id } = useParams<{ id: string }>()
+  const router = useRouter()
+  const supabase = createClient()
+
+  const [post, setPost] = useState<PostWithAuthor | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [notFound, setNotFound] = useState(false)
+  const [reply, setReply] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
-  const [postId, setPostId] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isOwnPost, setIsOwnPost] = useState(false)
+  const [existingThread, setExistingThread] = useState<{ id: string; status: string } | null>(null)
 
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data } = await supabase
-        .from('posts')
-        .select('id, headline, post_body')
-        .eq('author_id', user.id)
-        .eq('status', 'active')
+      setCurrentUserId(user.id)
+
+      const data = await getPostById(supabase, id)
+      if (!data) { setNotFound(true); setLoading(false); return }
+
+      setPost(data as PostWithAuthor)
+      setIsOwnPost(data.author_id === user.id)
+
+      // Check if already replied
+      const { data: thread } = await supabase
+        .from('threads')
+        .select('id, status')
+        .eq('post_id', id)
+        .eq('initiator_id', user.id)
         .single()
 
-      if (data) {
-        setPostId(data.id)
-        setHeadline(data.headline ?? '')
-        setBody(data.post_body ?? '')
-      }
+      if (thread) setExistingThread(thread)
 
       setLoading(false)
+      logInteraction(supabase, user.id, id, 'view')
     }
     load()
-  }, [])
+  }, [id])
 
-const handleSave = async () => {
-  if (!headline.trim()) return
+  const handleSendReply = async () => {
+    if (!reply.trim() || !post || !currentUserId) return
+    setSending(true)
+    setError('')
 
-  setSaving(true)
-  setError('')
-
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) throw new Error('Not authenticated')
-
-    if (postId) {
-      const { error } = await supabase
-        .from('posts')
-        .update({
-          headline: headline.trim(),
-          post_body: body.trim(),
+    try {
+      const { data: thread, error: threadErr } = await supabase
+        .from('threads')
+        .insert({
+          post_id: post.id,
+          initiator_id: currentUserId,
+          recipient_id: post.author_id,
+          status: 'pending',
         })
-        .eq('id', postId)
+        .select('id')
+        .single()
 
-      if (error) throw error
-    } else {
-      const { error } = await supabase
-        .from('posts')
-        .upsert(
-          {
-            author_id: user.id,
-            headline: headline.trim(),
-            post_body: body.trim(),
-            seeking: 'something_real',
-            status: 'active',
-          },
-          { onConflict: 'author_id' }
-        )
+      if (threadErr) throw threadErr
 
-      if (error) throw error
+      const { error: msgErr } = await supabase
+        .from('messages')
+        .insert({
+          thread_id: thread.id,
+          sender_id: currentUserId,
+          content: reply.trim(),
+        })
+
+      if (msgErr) throw msgErr
+
+      logInteraction(supabase, currentUserId, post.id, 'reply')
+      setSent(true)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setSending(false)
     }
-
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
-  } catch (err: unknown) {
-    setError(err instanceof Error ? err.message : 'Something went wrong')
-  } finally {
-    setSaving(false)
   }
-} 
 
   if (loading) {
     return (
@@ -99,114 +110,198 @@ const handleSave = async () => {
     )
   }
 
+  if (notFound) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '22px', color: '#5a4b78', marginBottom: '8px' }}>
+          this post no longer exists.
+        </p>
+        <button type="button" onClick={() => router.push('/feed')}
+          className="font-mono text-[11px] uppercase tracking-widest mt-4"
+          style={{ color: '#6d4bc3', background: 'none', border: 'none', cursor: 'pointer' }}>
+          ← back to feed
+        </button>
+      </div>
+    )
+  }
+
+  if (!post) return null
+
+  // Decide what to show at the bottom
+  const renderBottom = () => {
+    // Your own post
+    if (isOwnPost) {
+      return (
+        <div className="rounded-2xl px-5 py-4 text-center"
+          style={{ background: '#1e1530', border: '1.5px solid #3d2f5c' }}>
+          <p className="font-mono text-[11px] uppercase tracking-widest" style={{ color: '#5a4b78' }}>
+            this is your post
+          </p>
+        </div>
+      )
+    }
+
+    // Already have an open thread
+    if (existingThread?.status === 'open') {
+      return (
+        <button type="button" onClick={() => router.push(`/thread/${existingThread.id}`)}
+          className="w-full rounded-2xl px-5 py-4 text-center transition-all"
+          style={{ background: '#1e1530', border: '1.5px solid #6d4bc3', cursor: 'pointer' }}>
+          <p className="font-mono text-[11px] uppercase tracking-widest" style={{ color: '#9b85e8' }}>
+            you have an open thread with this person →
+          </p>
+        </button>
+      )
+    }
+
+    // Already sent a pending reply
+    if (existingThread?.status === 'pending') {
+      return (
+        <div className="rounded-2xl px-5 py-5"
+          style={{ background: '#1a1530', border: '1.5px solid #3d2f5c' }}>
+          <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '18px', color: '#f0eaff', marginBottom: '6px' }}>
+            you already replied.
+          </p>
+          <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '14px', color: '#9b85e8' }}>
+            waiting for them to open it.
+          </p>
+        </div>
+      )
+    }
+
+    // Sent just now
+    if (sent) {
+      return (
+        <div className="rounded-2xl px-5 py-8 text-center"
+          style={{ background: '#1a2a1a', border: '1.5px solid #2a4a2a' }}>
+          <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '22px', color: '#f0eaff', marginBottom: '8px' }}>
+            sent.
+          </p>
+          <p className="font-mono text-[10px] leading-relaxed" style={{ color: '#4a6a4a' }}>
+            waiting for them to open it.
+          </p>
+          <button type="button" onClick={() => router.push('/feed')}
+            className="font-mono text-[10px] uppercase tracking-widest mt-6 block mx-auto"
+            style={{ color: '#6a5a88', background: 'none', border: 'none', cursor: 'pointer' }}>
+            ← back to feed
+          </button>
+        </div>
+      )
+    }
+
+    // Default — reply composer
+    return (
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-widest mb-3"
+          style={{ color: '#6a5a88' }}>
+          send a reply
+        </p>
+        <textarea
+          value={reply}
+          onChange={e => setReply(e.target.value)}
+          placeholder="say something worth opening."
+          rows={5}
+          className="w-full outline-none resize-none rounded-xl"
+          style={{
+            background: '#1e1530',
+            border: '1.5px solid #3d2f5c',
+            padding: '14px 16px',
+            fontFamily: serif,
+            fontSize: '16px',
+            color: '#f0eaff',
+            lineHeight: 1.65,
+            transition: 'border-color 0.15s',
+          }}
+          onFocus={e => { e.currentTarget.style.borderColor = '#6d4bc3' }}
+          onBlur={e => { e.currentTarget.style.borderColor = '#3d2f5c' }}
+        />
+        {error && (
+          <p className="font-mono text-[10px] mt-2" style={{ color: '#f87171' }}>{error}</p>
+        )}
+        <div className="flex items-center justify-between mt-3">
+          <p className="font-mono text-[10px]" style={{ color: '#3a2b58' }}>
+            {reply.length > 0 && `${reply.length} chars`}
+          </p>
+          <button
+            type="button"
+            onClick={handleSendReply}
+            disabled={!reply.trim() || sending}
+            className="font-mono text-[11px] font-bold uppercase tracking-widest rounded-full transition-all"
+            style={{
+              padding: '10px 24px',
+              background: reply.trim() && !sending ? '#6d4bc3' : 'rgba(109,75,195,0.2)',
+              color: reply.trim() && !sending ? '#ffffff' : '#4a3b68',
+              border: 'none',
+              cursor: reply.trim() && !sending ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {sending ? 'sending...' : 'send →'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <main className="min-h-screen">
       <div className="w-full max-w-xl mx-auto">
 
-        <div className="px-5 pt-14 pb-4" style={{ borderBottom: '1px solid #2a1f42' }}>
-          <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '30px', color: '#f0eaff' }}>
-            {postId ? 'edit your post.' : 'write your post.'}
-          </p>
-          <p className="font-mono text-[10px] uppercase tracking-widest mt-1" style={{ color: '#8a7aaa' }}>
-            {postId ? 'changes save immediately' : 'this is what people see in the feed'}
-          </p>
+        <div className="px-5 pt-14 pb-4">
+          <button type="button" onClick={() => router.back()}
+            className="font-mono text-[11px] uppercase tracking-widest transition-colors"
+            style={{ color: '#6a5a88', background: 'none', border: 'none', cursor: 'pointer' }}>
+            ← back
+          </button>
         </div>
 
-        <div className="px-5 pt-8">
+        <div className="px-5">
+
+          <p className="font-mono text-[10px] mb-5" style={{ color: '#6a5a88' }}>
+            {[
+              post.author?.age ? `${post.author.age}` : null,
+              post.author?.location_display ?? null,
+              timeAgo(post.created_at),
+            ].filter(Boolean).join(' · ')}
+          </p>
 
           {/* Headline */}
-          <div className="mb-8">
-            <div className="flex items-end justify-between mb-2">
-              <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '15px', color: '#8a7aaa' }}>
-                headline
-              </p>
-              <p className="font-mono text-[10px]"
-                style={{ color: headline.length > 100 ? '#c8922a' : '#5a4b78' }}>
-                {headline.length}/120
-              </p>
-            </div>
-            <input
-              type="text"
-              value={headline}
-              onChange={e => setHeadline(e.target.value)}
-              maxLength={120}
-              placeholder="looking for someone who..."
-              className="w-full bg-transparent outline-none"
-              style={{
-                fontFamily: serif,
-                fontStyle: 'italic',
-                fontSize: '22px',
-                color: '#f0eaff',
-                borderBottom: '1px solid #3a2b58',
-                paddingBottom: '10px',
-                lineHeight: 1.4,
-                transition: 'border-color 0.15s',
-              }}
-              onFocus={e => { e.currentTarget.style.borderBottomColor = '#6d4bc3' }}
-              onBlur={e => { e.currentTarget.style.borderBottomColor = '#3a2b58' }}
-            />
+          <div className="mb-5" style={{ borderLeft: '2px solid #6d4bc3', paddingLeft: '16px' }}>
+            <p style={{
+              fontFamily: serif,
+              fontStyle: 'italic',
+              fontSize: '28px',
+              color: '#f0eaff',
+              lineHeight: 1.4,
+            }}>
+              {post.headline}
+            </p>
           </div>
 
           {/* Body */}
-          <div className="mb-8">
-            <div className="flex items-end justify-between mb-2">
-              <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '15px', color: '#8a7aaa' }}>
-                your post
-              </p>
-              <p className="font-mono text-[10px]" style={{ color: '#5a4b78' }}>
-                {body.length}/2000
-              </p>
-            </div>
-            <textarea
-              value={body}
-              onChange={e => setBody(e.target.value)}
-              maxLength={2000}
-              rows={8}
-              placeholder="tell them about yourself. write like a person."
-              className="w-full bg-transparent outline-none resize-none"
-              style={{
-                fontFamily: serif,
-                fontSize: '17px',
-                color: '#c8b8e8',
-                lineHeight: 1.75,
-                borderBottom: '1px solid #3a2b58',
-                paddingBottom: '10px',
-                transition: 'border-color 0.15s',
-              }}
-              onFocus={e => { e.currentTarget.style.borderBottomColor = '#6d4bc3' }}
-              onBlur={e => { e.currentTarget.style.borderBottomColor = '#3a2b58' }}
-            />
-          </div>
+          <p className="mb-6" style={{
+            fontFamily: serif,
+            fontSize: '17px',
+            color: '#c8b8e8',
+            lineHeight: 1.75,
+          }}>
+            {post.post_body}
+          </p>
 
-          {error && (
-            <p className="font-mono text-[10px] mb-4" style={{ color: '#f87171' }}>{error}</p>
+          {/* Tags */}
+          {post.tag_names && post.tag_names.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-8">
+              {post.tag_names.map(tag => (
+                <span key={tag} className="font-mono text-[10px] rounded-full px-2.5 py-1"
+                  style={{ border: '1px solid #3d2f5c', color: '#8a7aaa' }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="font-mono text-[10px] uppercase tracking-widest"
-              style={{ color: '#8a7aaa', background: 'none', border: 'none', cursor: 'pointer' }}
-            >
-              ← back
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!headline.trim() || saving}
-              className="font-mono text-[10px] font-bold uppercase tracking-widest rounded-full transition-all"
-              style={{
-                padding: '10px 28px',
-                background: saved ? '#2a4a2a' : headline.trim() ? '#6d4bc3' : 'rgba(109,75,195,0.2)',
-                color: saved ? '#6ee7a0' : headline.trim() ? '#fff' : '#4a3b68',
-                border: saved ? '1px solid #2a5a2a' : 'none',
-                cursor: headline.trim() ? 'pointer' : 'not-allowed',
-              }}
-            >
-              {saving ? 'saving...' : saved ? 'saved ✓' : 'save →'}
-            </button>
-          </div>
+          <div style={{ height: '1px', background: '#2a1f42', marginBottom: '28px' }} />
+
+          {renderBottom()}
         </div>
 
         <div style={{ height: '80px' }} />
