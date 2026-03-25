@@ -50,43 +50,63 @@ export default function PostPage() {
     load()
   }, [id])
 
-  const handleSendReply = async () => {
-    if (!reply.trim() || !post || !currentUserId) return
-    setSending(true)
-    setError('')
+const handleSendReply = async () => {
+  if (!reply.trim() || !post || !currentUserId) return
+  setSending(true)
+  setError('')
 
-    try {
-      const { data: thread, error: threadErr } = await supabase
-        .from('threads')
-        .insert({
-          post_id: post.id,
-          initiator_id: currentUserId,
-          recipient_id: post.author_id,
-          status: 'pending',
-        })
-        .select('id')
-        .single()
+  try {
+    // Check for existing thread first
+    const { data: existing } = await supabase
+      .from('threads')
+      .select('id, status')
+      .eq('post_id', post.id)
+      .eq('initiator_id', currentUserId)
+      .single()
 
-      if (threadErr) throw threadErr
-
-      const { error: msgErr } = await supabase
-        .from('messages')
-        .insert({
-          thread_id: thread.id,
-          sender_id: currentUserId,
-          content: reply.trim(),
-        })
-
-      if (msgErr) throw msgErr
-
-      logInteraction(supabase, currentUserId, post.id, 'reply')
-      setSent(true)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setSending(false)
+    if (existing) {
+      if (existing.status === 'open') {
+        router.push(`/thread/${existing.id}`)
+        return
+      }
+      if (existing.status === 'pending') {
+        setError('you already sent a reply to this post.')
+        setSending(false)
+        return
+      }
     }
+
+    const { data: thread, error: threadErr } = await supabase
+      .from('threads')
+      .insert({
+        post_id: post.id,
+        initiator_id: currentUserId,
+        recipient_id: post.author_id,
+        status: 'pending',
+      })
+      .select('id')
+      .single()
+
+    if (threadErr) throw threadErr
+
+    const { error: msgErr } = await supabase
+      .from('messages')
+      .insert({
+        thread_id: thread.id,
+        sender_id: currentUserId,
+        content: reply.trim(),
+      })
+
+    if (msgErr) throw msgErr
+
+    logInteraction(supabase, currentUserId, post.id, 'reply')
+    setSent(true)
+  } catch (err: unknown) {
+    setError(err instanceof Error ? err.message : 'Something went wrong')
+  } finally {
+    setSending(false)
   }
+}
 
   if (loading) {
     return (
