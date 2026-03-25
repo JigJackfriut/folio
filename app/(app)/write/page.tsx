@@ -60,19 +60,21 @@ export default function WritePage() {
           .eq('id', postId)
 
         if (error) throw error
-      } else {
-        const { error } = await supabase
-          .from('posts')
-          .insert({
-            author_id: user.id,
-            headline: headline.trim(),
-            post_body: body.trim(),
-            seeking: 'something_real',
-            status: 'active',
-          })
+      } } else {
+  const { error } = await supabase
+    .from('posts')
+    .insert({
+      author_id: user.id,
+      headline: headline.trim(),
+      post_body: body.trim(),
+      seeking: 'something_real',
+      status: 'active',
+    })
 
-        if (error) throw error
-      }
+  if (error) throw error
+}
+
+   
 
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
