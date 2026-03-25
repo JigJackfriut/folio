@@ -5,12 +5,16 @@ export async function getFeedPosts(
   client: SupabaseClient,
   userId: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  includedTags: string[] = [],
+  crossedTags: string[] = []
 ): Promise<PostWithSignal[]> {
   const { data, error } = await client.rpc('get_folio_feed', {
     p_user_id: userId,
     p_limit: limit,
     p_offset: offset,
+    p_included_tags: includedTags,
+    p_crossed_tags: crossedTags,
   })
 
   if (error) throw error
@@ -23,6 +27,7 @@ export async function getFeedPosts(
     post_body: row.post_body,
     tag_names: row.tag_names ?? [],
     seeking: row.seeking,
+    status: 'active' as const,
     created_at: row.created_at,
     embedding: null,
     author: {
@@ -34,7 +39,6 @@ export async function getFeedPosts(
       intent_type: row.author_intent,
       connection_pref: row.author_connection_pref,
     },
-    author_echo_tags: [], // never sent to client
     signal: row.signal,
     signal_reason: row.signal_reason,
     matched_tags: row.matched_public_tags ?? [],
@@ -42,10 +46,7 @@ export async function getFeedPosts(
   })) as PostWithSignal[]
 }
 
-export async function getPostById(
-  client: SupabaseClient,
-  postId: string
-) {
+export async function getPostById(client: SupabaseClient, postId: string) {
   const { data, error } = await client
     .from('posts')
     .select(`
@@ -55,24 +56,18 @@ export async function getPostById(
       )
     `)
     .eq('id', postId)
+    .eq('status', 'active')
     .single()
 
   if (error) return null
-  if (!data) return null
-
-  // Flatten in case author comes back as array
   const author = Array.isArray(data.author) ? data.author[0] : data.author
-
-  return { ...data, author } as unknown as PostWithAuthor
+  return { ...data, author }
 }
 
-export async function getPostByAuthor(
-  client: SupabaseClient,
-  authorId: string
-) {
+export async function getPostByAuthor(client: SupabaseClient, authorId: string) {
   const { data, error } = await client
     .from('posts')
-    .select('id, author_id, headline, post_body, tag_names, seeking, created_at')
+    .select('id, author_id, headline, post_body, tag_names, seeking, created_at, status')
     .eq('author_id', authorId)
     .eq('status', 'active')
     .single()
