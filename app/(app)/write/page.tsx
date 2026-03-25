@@ -41,56 +41,54 @@ export default function WritePage() {
     load()
   }, [])
 
-  const handleSave = async () => {
-    if (!headline.trim()) return
-    setSaving(true)
-    setError('')
+const handleSave = async () => {
+  if (!headline.trim()) return
 
-try {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  setSaving(true)
+  setError('')
 
-  if (!user) throw new Error('Not authenticated')
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (postId) {
-    const { error } = await supabase
-      .from('posts')
-      .update({
-        headline: headline.trim(),
-        post_body: body.trim(),
-      })
-      .eq('id', postId)
+    if (!user) throw new Error('Not authenticated')
 
-    if (error) throw error
-  } else {
-    const { error } = await supabase
-      .from('posts')
-      .upsert(
-        {
-          author_id: user.id,
+    if (postId) {
+      const { error } = await supabase
+        .from('posts')
+        .update({
           headline: headline.trim(),
           post_body: body.trim(),
-          seeking: 'something_real',
-          status: 'active',
-        },
-        { onConflict: 'author_id' }
-      )
+        })
+        .eq('id', postId)
 
-    if (error) throw error
-  }
-} catch (error) {
-  console.error(error)
-}
+      if (error) throw error
+    } else {
+      const { error } = await supabase
+        .from('posts')
+        .upsert(
+          {
+            author_id: user.id,
+            headline: headline.trim(),
+            post_body: body.trim(),
+            seeking: 'something_real',
+            status: 'active',
+          },
+          { onConflict: 'author_id' }
+        )
 
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setSaving(false)
+      if (error) throw error
     }
+
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  } catch (err: unknown) {
+    setError(err instanceof Error ? err.message : 'Something went wrong')
+  } finally {
+    setSaving(false)
   }
+} 
 
   if (loading) {
     return (
