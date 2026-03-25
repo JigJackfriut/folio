@@ -19,7 +19,10 @@ export function useFeed() {
   const [hasMore, setHasMore] = useState(true)
   const supabase = createClient()
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (
+    crossed: string[] = [],
+    included: string[] = []
+  ) => {
     setLoading(true)
     setError(null)
     try {
@@ -35,7 +38,7 @@ export function useFeed() {
       const saved = profile?.crossed_tags ?? []
       setCrossedTags(saved)
 
-      const data = await getFeedPosts(supabase, user.id, PAGE_SIZE, 0)
+      const data = await getFeedPosts(supabase, user.id, PAGE_SIZE, 0, included, saved)
       setPosts(data)
       setOffset(PAGE_SIZE)
       setHasMore(data.length === PAGE_SIZE)
@@ -52,14 +55,14 @@ export function useFeed() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const data = await getFeedPosts(supabase, user.id, PAGE_SIZE, offset)
+      const data = await getFeedPosts(supabase, user.id, PAGE_SIZE, offset, includedTags, crossedTags)
       setPosts(prev => [...prev, ...data])
       setOffset(prev => prev + PAGE_SIZE)
       setHasMore(data.length === PAGE_SIZE)
     } finally {
       setLoadingMore(false)
     }
-  }, [offset, loadingMore, hasMore])
+  }, [offset, loadingMore, hasMore, includedTags, crossedTags])
 
   useEffect(() => { load() }, [load])
 
@@ -68,32 +71,29 @@ export function useFeed() {
       ? crossedTags.filter(t => t !== tag)
       : [...crossedTags, tag]
     setCrossedTags(updated)
-    await updateCrossedTags(supabase, (await supabase.auth.getUser()).data.user!.id, updated)
-  }, [crossedTags])
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) await updateCrossedTags(supabase, user.id, updated)
+    // Reload feed with new filters server-side
+    await load(updated, includedTags)
+  }, [crossedTags, includedTags, load])
 
-  const toggleIncludedTag = useCallback((tag: string) => {
-    setIncludedTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    )
-  }, [])
-
-  // Apply both filters client-side
-  const filteredPosts = posts.filter(post => {
-    const tags = post.tag_names ?? []
-    if (crossedTags.some(t => tags.includes(t))) return false
-    if (includedTags.length > 0 && !includedTags.some(t => tags.includes(t))) return false
-    return true
-  })
+  const toggleIncludedTag = useCallback(async (tag: string) => {
+    const updated = includedTags.includes(tag)
+      ? includedTags.filter(t => t !== tag)
+      : [...includedTags, tag]
+    setIncludedTags(updated)
+    await load(crossedTags, updated)
+  }, [includedTags, crossedTags, load])
 
   return {
-    posts: filteredPosts,
+    posts,
     crossedTags,
     includedTags,
     loading,
     loadingMore,
     error,
     hasMore,
-    refresh: load,
+    refresh: () => load(crossedTags, includedTags),
     loadMore,
     toggleCrossedTag,
     toggleIncludedTag,
