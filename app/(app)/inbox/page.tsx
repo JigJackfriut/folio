@@ -423,7 +423,7 @@ export default function InboxPage() {
                         )}
                         <span className="font-mono text-[11px]"
                           style={{ color: unread ? '#f0eaff' : '#c3b3ff', fontWeight: unread ? 700 : 400 }}>
-                          {otherPerson?.handle || otherPerson?.display_name || 'someone'}
+                          {otherPerson?.display_name || otherPerson?.handle || 'someone'}
                         </span>
                       </div>
                       {lastMsg && (
