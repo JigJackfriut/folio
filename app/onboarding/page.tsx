@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useOnboarding } from '@/lib/onboarding-store'
@@ -13,25 +13,26 @@ import { PreferencesScreen } from '@/components/onboarding/screens/preferences'
 import { TagsScreen }        from '@/components/onboarding/screens/tags'
 import { PostScreen }        from '@/components/onboarding/screens/post'
 import { PreviewScreen }     from '@/components/onboarding/screens/preview'
-import { TagExplainerScreen } from '@/components/onboarding/screens/tag-explainer'
+import { PublicTagsScreen, EchoTagsScreen } from '@/components/onboarding/screens/tag-explainer'
 
-const TOTAL = 8
+const TOTAL = 9
 
 const STEP_HEADINGS: Record<number, { title: string; sub: string }> = {
-  1: { title: 'what do you\nactually want?',      sub: 'be honest with yourself'   },
-  2: { title: 'who\nare you?',                     sub: 'just the basics'           },
-  3: { title: 'where\nare you?',                   sub: 'sets your matching radius'  },
-  4: { title: 'who do you\nwant to meet?',         sub: 'select all that apply'     },
-  5: { title: 'how tags\nwork',                    sub: 'read this once'            },
-  6: { title: "what's\nactually you?",             sub: 'tap to add tags'           },
-  7: { title: 'write your\nfolio',                 sub: 'write like a person'       },
-  8: { title: "here's how\nyou'll appear",         sub: 'edit anytime'              },
+  1: { title: 'what do you\nactually want?', sub: 'be honest with yourself'   },
+  2: { title: 'who\nare you?',               sub: 'just the basics'           },
+  3: { title: 'where\nare you?',             sub: 'sets your matching radius'  },
+  4: { title: 'who do you\nwant to meet?',   sub: 'select all that apply'     },
+  5: { title: 'public\ntags',                sub: 'what people can see'       },
+  6: { title: 'echo\ntags',                  sub: 'your hidden signal'        },
+  7: { title: "what's\nactually you?",       sub: 'tap to add tags'           },
+  8: { title: 'write your\nfolio',           sub: 'write like a person'       },
+  9: { title: "here's how\nyou'll appear",   sub: 'edit anytime'              },
 }
 
 export default function OnboardingPage() {
-  const [step, setStep]     = useState(1)
-  const [saving, setSaving] = useState(false)
-  const [error, setError]   = useState('')
+  const [step, setStep]       = useState(1)
+  const [saving, setSaving]   = useState(false)
+  const [error, setError]     = useState('')
   const [animKey, setAnimKey] = useState(0)
   const [animDir, setAnimDir] = useState<'forward' | 'back'>('forward')
   const prevStep = useRef(step)
@@ -40,135 +41,143 @@ export default function OnboardingPage() {
   const router    = useRouter()
   const supabase  = createClient()
 
-const canNext: Record<number, boolean> = {
-  1: !!state.intent_type,
-  2: !!state.display_name.trim() && !!state.age && parseInt(state.age, 10) >= 18 && state.gender_identity.length > 0,
-  3: (() => {
-    const { match_base, connection_pref, location_place_id, college_name, match_radius_miles } = state
-    if (match_base === 'college') return !!college_name
-    if (connection_pref === 'online') return true
-    return !!location_place_id && !!match_radius_miles
-  })(),
-  4: state.gender_preference.length > 0,
-  5: true,
-  6: true,
-  7: !!state.post_headline.trim() && state.post_headline.trim().length <= 120 && state.post_body.trim().length <= 2000,
-  8: true,
-}
+  const canNext: Record<number, boolean> = {
+    1: !!state.intent_type,
+    2:
+      !!state.display_name.trim() &&
+      !!state.age &&
+      parseInt(state.age, 10) >= 18 &&
+      state.gender_identity.length > 0,
+    3: (() => {
+      const { match_base, connection_pref, location_place_id, college_name, match_radius_miles } = state
+      if (match_base === 'college') return !!college_name
+      if (connection_pref === 'online') return true
+      return !!location_place_id && !!match_radius_miles
+    })(),
+    4: state.gender_preference.length > 0,
+    5: true,
+    6: true,
+    7: true,
+    8:
+      !!state.post_headline.trim() &&
+      state.post_headline.trim().length <= 120 &&
+      state.post_body.trim().length <= 2000,
+    9: true,
+  }
 
-const navigate = (newStep: number) => {
-  setError('') // clear any previous error on navigation
-  setAnimDir(newStep > prevStep.current ? 'forward' : 'back')
-  prevStep.current = newStep
-  setStep(newStep)
-  setAnimKey(k => k + 1)
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
+  const navigate = (newStep: number) => {
+    setError('')
+    setAnimDir(newStep > prevStep.current ? 'forward' : 'back')
+    prevStep.current = newStep
+    setStep(newStep)
+    setAnimKey(k => k + 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const goNext = () => { if (step < TOTAL) navigate(step + 1); else void publish() }
   const goBack = () => navigate(Math.max(1, step - 1))
   const goSkip = () => navigate(Math.min(TOTAL, step + 1))
-  
-const publish = async () => {
-  setSaving(true)
-  setError('')
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
 
-    const locationDisplay = state.match_base === 'college'
-      ? state.college_name
-      : state.hide_exact_location
-        ? state.location_raw.split(',')[0]?.trim() ?? state.location_raw.trim()
-        : state.location_raw.trim()
+  const publish = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
 
-    const handle = `w/${state.display_name.trim().toLowerCase().replace(/\s+/g, '')}`
+      const locationDisplay = state.match_base === 'college'
+        ? state.college_name
+        : state.hide_exact_location
+          ? state.location_raw.split(',')[0]?.trim() ?? state.location_raw.trim()
+          : state.location_raw.trim()
 
-    const { error: profileErr } = await supabase.from('profiles').upsert({
-      id: user.id,
-      handle,
-      display_name: state.display_name.trim(),
-      age: parseInt(state.age, 10),
-      gender_identity: state.gender_identity,
-      match_base: state.match_base,
-      location_raw: state.location_raw.trim(),
-      location_display: locationDisplay,
-      college_name: state.college_name,
-      college_country: state.college_country,
-      college_url: state.college_url,
-      match_radius_miles: state.match_radius_miles,
-      open_to_distance: state.open_to_distance,
-      hide_exact_location: state.hide_exact_location,
-      gender_preference: state.gender_preference,
-      age_min: state.age_min,
-      age_max: state.age_max,
-      intent_type: state.intent_type,
-      connection_pref: state.connection_pref,
-      location_place_id: state.location_place_id,
-      onboarding_complete: true,
-    })
-    if (profileErr) throw profileErr
+      const handle = `w/${state.display_name.trim().toLowerCase().replace(/\s+/g, '')}`
 
-    const { error: authErr } = await supabase.auth.updateUser({
-      data: { onboarding_complete: true }
-    })
-    if (authErr) throw authErr
+      const { error: profileErr } = await supabase.from('profiles').upsert({
+        id: user.id,
+        handle,
+        display_name: state.display_name.trim(),
+        age: parseInt(state.age, 10),
+        gender_identity: state.gender_identity,
+        match_base: state.match_base,
+        location_raw: state.location_raw.trim(),
+        location_display: locationDisplay,
+        college_name: state.college_name,
+        college_country: state.college_country,
+        college_url: state.college_url,
+        match_radius_miles: state.match_radius_miles,
+        open_to_distance: state.open_to_distance,
+        hide_exact_location: state.hide_exact_location,
+        gender_preference: state.gender_preference,
+        age_min: state.age_min,
+        age_max: state.age_max,
+        intent_type: state.intent_type,
+        connection_pref: state.connection_pref,
+        location_place_id: state.location_place_id,
+        onboarding_complete: true,
+      })
+      if (profileErr) throw profileErr
 
-    // Build tag_names array from public tags for the post
-    const publicTagNames = state.tags
-      .filter(t => t.tier === 'public')
-      .map(t => t.name)
+      const { error: authErr } = await supabase.auth.updateUser({
+        data: { onboarding_complete: true }
+      })
+      if (authErr) throw authErr
 
-    const { data: post, error: postErr } = await supabase
-      .from('posts')
-      .upsert(
-        {
-          author_id: user.id,
-          headline: state.post_headline.trim(),
-          post_body: state.post_body.trim(),
-          seeking: state.intent_type,
-          tag_names: publicTagNames,
-          status: 'active',
-        },
-        { onConflict: 'author_id' }
-      )
-      .select('id')
-      .single()
-    if (postErr) throw postErr
-    if (!post) throw new Error('Post could not be created')
+      // Build tag_names from public tags only — used directly in feed RPC
+      const publicTagNames = state.tags
+        .filter(t => t.tier === 'public')
+        .map(t => t.name)
 
-    // Write profile_tags (public + echo)
-    await supabase.from('profile_tags').delete().eq('profile_id', user.id)
+      const { data: post, error: postErr } = await supabase
+        .from('posts')
+        .upsert(
+          {
+            author_id: user.id,
+            headline: state.post_headline.trim(),
+            post_body: state.post_body.trim(),
+            seeking: state.intent_type,
+            tag_names: publicTagNames,
+            status: 'active',
+          },
+          { onConflict: 'author_id' }
+        )
+        .select('id')
+        .single()
+      if (postErr) throw postErr
+      if (!post) throw new Error('Post could not be created')
 
-    if (state.tags.length > 0) {
-      const { error: tagErr } = await supabase.from('profile_tags').insert(
-        state.tags.map(t => ({
-          profile_id: user.id,
-          tag_name: t.name,
-          tier: t.tier,
-        }))
-      )
-      if (tagErr) throw tagErr
+      // Write profile_tags (public + echo)
+      await supabase.from('profile_tags').delete().eq('profile_id', user.id)
+
+      if (state.tags.length > 0) {
+        const { error: tagErr } = await supabase.from('profile_tags').insert(
+          state.tags.map(t => ({
+            profile_id: user.id,
+            tag_name: t.name,
+            tier: t.tier,
+          }))
+        )
+        if (tagErr) throw tagErr
+      }
+
+      router.push('/feed')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setSaving(false)
     }
-
-    router.push('/feed')
-  } catch (err: unknown) {
-    setError(err instanceof Error ? err.message : 'Something went wrong')
-    setSaving(false)
   }
-}
-  
 
-const screens: Record<number, React.ReactNode> = {
-  1: <IntentScreen onNext={goNext} />,
-  2: <BasicsScreen />,
-  3: <LocationScreen />,
-  4: <PreferencesScreen />,
-  5: <TagExplainerScreen />,
-  6: <TagsScreen />,
-  7: <PostScreen />,
-  8: <PreviewScreen />,
-}
+  const screens: Record<number, React.ReactNode> = {
+    1: <IntentScreen onNext={goNext} />,
+    2: <BasicsScreen />,
+    3: <LocationScreen />,
+    4: <PreferencesScreen />,
+    5: <PublicTagsScreen />,
+    6: <EchoTagsScreen />,
+    7: <TagsScreen />,
+    8: <PostScreen />,
+    9: <PreviewScreen />,
+  }
 
   const heading = STEP_HEADINGS[step]
 
@@ -214,12 +223,17 @@ const screens: Record<number, React.ReactNode> = {
               >
                 {heading.title}
               </h1>
-             <p
-  className="font-sans mt-4"
-  style={{ fontSize: '15px', color: '#cbbfe8', lineHeight: 1.6 }}
->
-  {heading.sub}
-</p>
+              <p
+                style={{
+                  fontFamily: 'EB Garamond, Georgia, serif',
+                  fontSize: '15px',
+                  color: '#cbbfe8',
+                  lineHeight: 1.6,
+                  marginTop: '16px',
+                }}
+              >
+                {heading.sub}
+              </p>
             </div>
             <div className="mt-auto pt-16">
               <p className="font-mono" style={{ fontSize: '10px', color: '#3a2b58', letterSpacing: '0.1em' }}>
@@ -250,9 +264,17 @@ const screens: Record<number, React.ReactNode> = {
           onNext={goNext}
           onSkip={goSkip}
           backVisible={step > 1}
-          skipVisible={step === 6}
+          skipVisible={step === 7}
           nextDisabled={!canNext[step] || saving}
-          nextLabel={saving ? 'saving...' : step === TOTAL ? 'publish my folio' : step === 5 ? 'got it →' : 'continue'}
+          nextLabel={
+            saving
+              ? 'saving...'
+              : step === TOTAL
+                ? 'publish my folio'
+                : step === 5 || step === 6
+                  ? 'got it →'
+                  : 'continue'
+          }
         />
       </div>
     </main>
