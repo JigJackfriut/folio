@@ -1,106 +1,131 @@
 'use client'
 
-import { Heading, Sub } from '@/components/onboarding/ui'
+const serif = 'EB Garamond, Georgia, serif'
 
-export function TagExplainerScreen() {
+// ─── Screen 5: Public Tags ────────────────────────────────────────────────────
+
+export function PublicTagsScreen() {
   return (
     <div>
-      <Heading>two kinds of tags.</Heading>
-      <Sub>here is how they work.</Sub>
-
-      {/* Public */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-3">
-          <div
-            className="flex-shrink-0 rounded-full flex items-center justify-center font-mono text-[10px]"
-            style={{ width: '28px', height: '28px', background: 'rgba(109,75,195,0.2)', color: '#c8c0e0', border: '1px solid rgba(109,75,195,0.4)' }}
-          >
-            01
-          </div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em]" style={{ color: '#9b85e8' }}>
-            public tags
-          </p>
-        </div>
-        <div style={{ paddingLeft: '40px' }}>
-          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '16px', color: '#f0eaff', lineHeight: 1.65, marginBottom: '12px' }}>
-            Visible on your profile. Anyone browsing can see them.
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {['Bookworm', 'Hookup', 'Night owl', 'Cinephile', 'ADHD', 'In therapy', 'Dog parent', '420 friendly'].map(tag => (
-              <span
-                key={tag}
-                className="font-mono text-[10px] rounded-full px-2.5 py-1"
-                style={{ background: 'rgba(109,75,195,0.1)', border: '1px solid rgba(109,75,195,0.25)', color: '#9b85e8' }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Echo */}
-      <div className="mb-6" style={{ borderTop: '1px solid #2a1f42', paddingTop: '20px' }}>
-        <div className="flex items-center gap-3 mb-3">
-          <div
-            className="flex-shrink-0 rounded-full flex items-center justify-center font-mono text-[10px]"
-            style={{ width: '28px', height: '28px', background: 'rgba(200,146,42,0.2)', color: '#c8c0e0', border: '1px solid rgba(200,146,42,0.4)' }}
-          >
-            02
-          </div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em]" style={{ color: '#c8922a' }}>
-            echo tags
-          </p>
-        </div>
-        <div style={{ paddingLeft: '40px' }}>
-          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '16px', color: '#f0eaff', lineHeight: 1.65, marginBottom: '10px' }}>
-            Hidden from everyone. If you and someone else both picked the same echo tag, it surfaces inside your thread once a conversation opens. Not before, not on your profile.
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {['Late-diagnosed ADHD', 'Rejection sensitive', 'Never dated before', 'Anxious attachment', 'Recently out', 'Chronic illness'].map(tag => (
-              <span
-                key={tag}
-                className="font-mono text-[10px] rounded-full px-2.5 py-1"
-                style={{ background: 'rgba(200,146,42,0.08)', border: '1px solid rgba(200,146,42,0.2)', color: '#c8922a' }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Cross out */}
-      <div className="mb-6" style={{ borderTop: '1px solid #2a1f42', paddingTop: '20px' }}>
-        <div className="flex items-center gap-3 mb-3">
-          <div
-            className="flex-shrink-0 rounded-full flex items-center justify-center font-mono text-[10px]"
-            style={{ width: '28px', height: '28px', background: 'rgba(90,75,120,0.2)', color: '#c8c0e0', border: '1px solid rgba(90,75,120,0.4)' }}
-          >
-            ✕
-          </div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em]" style={{ color: '#c8c0e0' }}>
-            crossing tags out
-          </p>
-        </div>
-        <div style={{ paddingLeft: '40px' }}>
-          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '16px', color: '#f0eaff', lineHeight: 1.65, marginBottom: '10px' }}>
-            From the feed you can cross out any public tag. Posts from people with that tag won't appear. Nobody else can see what you've crossed out.
-          </p>
-          <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '14px', color: '#7a6b9a', lineHeight: 1.6 }}>
-            You set this in the feed, not here.
-          </p>
-        </div>
-      </div>
-
-      {/* Closing note */}
       <div
-        className="rounded-xl p-4"
+        className="inline-flex items-center gap-2 rounded-full mb-6"
+        style={{
+          background: 'rgba(109,75,195,0.12)',
+          border: '1px solid rgba(109,75,195,0.3)',
+          padding: '4px 12px',
+        }}
+      >
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#9b85e8' }} />
+        <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#9b85e8' }}>
+          visible to everyone
+        </span>
+      </div>
+
+      <p style={{ fontFamily: serif, fontSize: '18px', color: '#f0eaff', lineHeight: 1.7, marginBottom: '20px' }}>
+        Public tags appear on your profile. Anyone browsing the feed can see them.
+      </p>
+
+      <p style={{ fontFamily: serif, fontSize: '18px', color: '#f0eaff', lineHeight: 1.7, marginBottom: '20px' }}>
+        They are conversation starters — things you're comfortable owning publicly.
+      </p>
+
+      <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '16px', color: '#9b85e8', lineHeight: 1.7, marginBottom: '24px' }}>
+        Pick things that are genuinely you. Not things you think you should say.
+      </p>
+
+      <p className="font-mono text-[10px] uppercase tracking-widest mb-3" style={{ color: '#5a4b78' }}>
+        examples
+      </p>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        {['Bookworm', 'Night owl', 'ADHD', 'In therapy', 'Dog parent', 'Cinephile', 'Introvert', '420 friendly', 'Casual', 'Long-term'].map(tag => (
+          <span
+            key={tag}
+            className="font-mono text-[11px] rounded-full px-3 py-1.5"
+            style={{
+              border: '1px solid #3d2f5c',
+              color: '#8a7aaa',
+              background: 'transparent',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      <div
+        className="rounded-2xl p-4"
         style={{ background: 'rgba(30,21,48,0.5)', border: '1px solid #2a1f42' }}
       >
-        <p style={{ fontFamily: 'EB Garamond, Georgia, serif', fontSize: '15px', color: '#c8c0e0', lineHeight: 1.7 }}>
-          You can change all of this from your profile at any time.
+        <p style={{ fontFamily: serif, fontStyle: 'italic', fontSize: '15px', color: '#c8b8e8', lineHeight: 1.65 }}>
+          You can also cross tags out from the feed later — posts from people with that tag won't appear. Nobody else sees what you've crossed out.
         </p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Screen 6: Echo Tags ──────────────────────────────────────────────────────
+
+export function EchoTagsScreen() {
+  return (
+    <div>
+      <div
+        className="inline-flex items-center gap-2 rounded-full mb-6"
+        style={{
+          background: 'rgba(200,146,42,0.1)',
+          border: '1px solid rgba(200,146,42,0.3)',
+          padding: '4px 12px',
+        }}
+      >
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#c8922a' }} />
+        <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: '#c8922a' }}>
+          hidden from everyone
+        </span>
+      </div>
+
+      <p style={{ fontFamily: serif, fontSize: '18px', color: '#f0eaff', lineHeight: 1.7, marginBottom: '20px' }}>
+        Echo tags are private. Nobody can see them — not on your profile, not in the feed, not anywhere.
+      </p>
+
+      <p style={{ fontFamily: serif, fontSize: '18px', color: '#f0eaff', lineHeight: 1.7, marginBottom: '20px' }}>
+        But if you and someone else both pick the same echo tag, and a conversation opens between you — it surfaces quietly at the top of your thread. Just once. Just for you two.
+      </p>
+
+      <div
+        className="rounded-2xl p-4 mb-6"
+        style={{ background: 'rgba(200,146,42,0.06)', border: '1px solid rgba(200,146,42,0.2)' }}
+      >
+        <p className="font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: '#c8922a' }}>
+          ◎ every wednesday
+        </p>
+        <p style={{ fontFamily: serif, fontSize: '16px', color: '#f0eaff', lineHeight: 1.65 }}>
+          Once a week we surface your strongest echo matches — people whose hidden tags align with yours most closely. You'll get a quiet notification on Wednesday.
+        </p>
+      </div>
+
+      <p className="font-mono text-[10px] uppercase tracking-widest mb-3" style={{ color: '#5a4b78' }}>
+        the kind of things people pick
+      </p>
+
+      <div className="flex flex-wrap gap-2">
+        {['Late-diagnosed ADHD', 'Rejection sensitive', 'Never dated before', 'Anxious attachment', 'Recently out', 'Chronic illness', 'In recovery', 'Autistic'].map(tag => (
+          <span
+            key={tag}
+            className="font-mono text-[11px] rounded-full px-3 py-1.5"
+            style={{
+              border: '1px solid rgba(200,146,42,0.25)',
+              color: '#c8922a',
+              background: 'rgba(200,146,42,0.06)',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          >
+            {tag}
+          </span>
+        ))}
       </div>
     </div>
   )
