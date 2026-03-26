@@ -56,13 +56,14 @@ const canNext: Record<number, boolean> = {
   8: true,
 }
 
-  const navigate = (newStep: number) => {
-    setAnimDir(newStep > prevStep.current ? 'forward' : 'back')
-    prevStep.current = newStep
-    setStep(newStep)
-    setAnimKey(k => k + 1)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+const navigate = (newStep: number) => {
+  setError('') // clear any previous error on navigation
+  setAnimDir(newStep > prevStep.current ? 'forward' : 'back')
+  prevStep.current = newStep
+  setStep(newStep)
+  setAnimKey(k => k + 1)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
   const goNext = () => { if (step < TOTAL) navigate(step + 1); else void publish() }
   const goBack = () => navigate(Math.max(1, step - 1))
